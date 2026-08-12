@@ -19,7 +19,6 @@ type Trade = {
 
 type Draft = {
   tradeDate: string;
-  side: "long" | "short";
   entryPrice: string;
   exitPrice: string;
   quantity: string;
@@ -35,7 +34,6 @@ const today = () => {
 
 const emptyDraft = (): Draft => ({
   tradeDate: today(),
-  side: "long",
   entryPrice: "",
   exitPrice: "",
   quantity: "",
@@ -58,7 +56,7 @@ function previewPnl(draft: Draft) {
   const exit = Number(draft.exitPrice) || 0;
   const quantity = Number(draft.quantity) || 0;
   const fees = (Number(draft.entryFee) || 0) + (Number(draft.exitFee) || 0);
-  const gross = (exit - entry) * quantity * (draft.side === "long" ? 1 : -1);
+  const gross = (exit - entry) * quantity;
   return gross - fees;
 }
 
@@ -206,7 +204,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
             visibleTrades.map((trade) => (
               <article className="trade-card" key={trade.id}>
                 <div className="trade-main">
-                  <span className={`side-pill ${trade.side}`}>{trade.side === "long" ? "做多" : "做空"}</span>
+                  <span className="side-pill long">做多</span>
                   <div className="trade-prices">
                     <strong>{compact(trade.entryPrice)} <i>→</i> {compact(trade.exitPrice)}</strong>
                     <span>{trade.tradeDate} · {compact(trade.quantity)} HYPE</span>
@@ -239,12 +237,6 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
             <div className="form-head">
               <div><span className="section-kicker">NEW TRADE</span><h2>记录交易</h2></div>
               <button type="button" className="close-button" onClick={() => setShowForm(false)}>×</button>
-            </div>
-
-            <label className="field-label">方向</label>
-            <div className="side-select">
-              <button type="button" className={draft.side === "long" ? "selected long" : ""} onClick={() => setDraft({ ...draft, side: "long" })}>↗ 做多 Long</button>
-              <button type="button" className={draft.side === "short" ? "selected short" : ""} onClick={() => setDraft({ ...draft, side: "short" })}>↘ 做空 Short</button>
             </div>
 
             <div className="field-grid">

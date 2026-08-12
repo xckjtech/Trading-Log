@@ -34,16 +34,15 @@ export async function POST(request: Request) {
   if (!userId) return Response.json({ error: "请先登录" }, { status: 401 });
   try {
     const body = (await request.json()) as Record<string, unknown>;
-    const side = body.side === "short" ? "short" : body.side === "long" ? "long" : null;
+    const side = "long" as const;
     const tradeDate = typeof body.tradeDate === "string" ? body.tradeDate : "";
-    if (!side) throw new Error("请选择交易方向");
     if (!/^\d{4}-\d{2}-\d{2}$/.test(tradeDate)) throw new Error("交易日期格式不正确");
     const entryPrice = numberField(body.entryPrice, "开仓价格");
     const exitPrice = numberField(body.exitPrice, "平仓价格");
     const quantity = numberField(body.quantity, "数量");
     const entryFee = numberField(body.entryFee || 0, "开仓手续费", true);
     const exitFee = numberField(body.exitFee || 0, "平仓手续费", true);
-    const grossPnl = (exitPrice - entryPrice) * quantity * (side === "long" ? 1 : -1);
+    const grossPnl = (exitPrice - entryPrice) * quantity;
     const netPnl = grossPnl - entryFee - exitFee;
     const note = typeof body.note === "string" ? body.note.trim().slice(0, 160) : "";
     const db = await getDb();

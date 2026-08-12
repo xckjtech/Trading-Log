@@ -64,7 +64,6 @@ button { -webkit-tap-highlight-color: transparent; }
 .trade-main { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 12px; padding: 15px; }
 .side-pill { width: 43px; padding: 6px 0; text-align: center; border-radius: 6px; font-size: 11px; font-weight: 700; }
 .side-pill.long { color: var(--mint); background: rgba(57,230,164,.09); }
-.side-pill.short { color: var(--red); background: rgba(255,107,114,.09); }
 .trade-prices { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
 .trade-prices strong { font: 600 13px/1.2 var(--font-geist-mono); white-space: nowrap; }
 .trade-prices i { color: #5e6c67; font-style: normal; margin: 0 3px; }
@@ -90,11 +89,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .form-handle { width: 38px; height: 4px; background: #3b4541; border-radius: 5px; margin: 0 auto 17px; }
 .form-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 21px; }
 .close-button { width: 34px; height: 34px; border: 1px solid #35403c; border-radius: 50%; background: #1a201e; color: #aab2af; font-size: 21px; cursor: pointer; }
-.field-label, .field-grid label > span, .note-field > span { display: block; color: #a9b1ae; font-size: 11px; margin-bottom: 8px; }
-.side-select { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 18px; }
-.side-select button { height: 44px; border: 1px solid #303936; border-radius: 8px; background: #171c1b; color: #83908b; font-size: 12px; font-weight: 650; cursor: pointer; }
-.side-select button.selected.long { color: var(--mint); border-color: rgba(57,230,164,.42); background: rgba(57,230,164,.075); }
-.side-select button.selected.short { color: var(--red); border-color: rgba(255,107,114,.42); background: rgba(255,107,114,.075); }
+.field-grid label > span, .note-field > span { display: block; color: #a9b1ae; font-size: 11px; margin-bottom: 8px; }
 .field-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 10px; }
 .input-wrap { height: 43px; display: flex; align-items: center; border: 1px solid #303936; border-radius: 7px; background: #0d1110; transition: border .15s; }
 .input-wrap:focus-within { border-color: #56635e; }
