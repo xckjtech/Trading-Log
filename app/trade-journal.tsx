@@ -158,7 +158,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
       </header>
 
       <section className="hero">
-        <div className="eyebrow"><span className="live-dot" /> TODAY · HYPE / USDC</div>
+        <div className="eyebrow"><span className="live-dot" /> TODAY · HYPE / USDT</div>
         <div className="pnl-row">
           <div>
             <p>今日净收益</p>
@@ -240,12 +240,12 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
             </div>
 
             <div className="field-grid">
-              <label><span>开仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.entryPrice} onChange={(e) => setDraft({ ...draft, entryPrice: e.target.value })} /><b>USDC</b></div></label>
-              <label><span>平仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.exitPrice} onChange={(e) => setDraft({ ...draft, exitPrice: e.target.value })} /><b>USDC</b></div></label>
+              <label><span>开仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.entryPrice} onChange={(e) => setDraft({ ...draft, entryPrice: e.target.value })} /><b>USDT</b></div></label>
+              <label><span>平仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.exitPrice} onChange={(e) => setDraft({ ...draft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
               <label><span>数量</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value })} /><b>HYPE</b></div></label>
               <label><span>交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
-              <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>USDC</b></div></label>
-              <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDC</b></div></label>
+              <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>USDT</b></div></label>
+              <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDT</b></div></label>
             </div>
 
             <label className="note-field"><span>交易备注 <em>选填</em></span><textarea maxLength={160} placeholder="为什么进场？哪里做得好或需要改进？" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} /></label>
