@@ -91,6 +91,10 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
     [trades],
   );
   const visibleTrades = filter === "today" ? todayTrades : trades;
+  const totalNet = useMemo(
+    () => trades.reduce((sum, trade) => sum + trade.netPnl, 0),
+    [trades],
+  );
   const stats = useMemo(() => {
     const net = todayTrades.reduce((sum, trade) => sum + trade.netPnl, 0);
     const fees = todayTrades.reduce(
@@ -174,6 +178,12 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
           <div><span>交易笔数</span><strong>{stats.count}</strong></div>
           <div><span>胜率</span><strong>{stats.winRate.toFixed(0)}%</strong></div>
           <div><span>手续费</span><strong>{money(stats.fees)}</strong></div>
+        </div>
+        <div className="total-return">
+          <div><span>总收益</span><small>全部交易 · 已扣手续费</small></div>
+          <strong className={totalNet > 0 ? "positive" : totalNet < 0 ? "negative" : ""}>
+            {money(totalNet, true)}
+          </strong>
         </div>
       </section>
 

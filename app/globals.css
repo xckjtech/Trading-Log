@@ -52,6 +52,11 @@ button { -webkit-tap-highlight-color: transparent; }
 .stats-grid div:last-child { border: 0; padding-right: 0; }
 .stats-grid span { color: var(--muted); font-size: 11px; }
 .stats-grid strong { font: 650 17px/1 var(--font-geist-mono); }
+.total-return { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding: 13px 15px; background: linear-gradient(100deg, rgba(57,230,164,.055), rgba(255,255,255,.018)); border: 1px solid #27302d; border-radius: 10px; }
+.total-return div { display: flex; flex-direction: column; gap: 3px; }
+.total-return span { color: #bcc5c1; font-size: 12px; font-weight: 650; }
+.total-return small { color: #64706b; font-size: 9px; }
+.total-return strong { font: 700 19px/1 var(--font-geist-mono); }
 
 .journal-section { margin-top: 19px; }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
