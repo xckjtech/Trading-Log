@@ -55,7 +55,7 @@ function previewPnl(draft: Draft) {
   const entry = Number(draft.entryPrice) || 0;
   const exit = Number(draft.exitPrice) || 0;
   const quantity = Number(draft.quantity) || 0;
-  const fees = (Number(draft.entryFee) || 0) + (Number(draft.exitFee) || 0);
+  const fees = (Number(draft.entryFee) || 0) * entry + (Number(draft.exitFee) || 0);
   const gross = (exit - entry) * quantity;
   return gross - fees;
 }
@@ -94,7 +94,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
   const stats = useMemo(() => {
     const net = todayTrades.reduce((sum, trade) => sum + trade.netPnl, 0);
     const fees = todayTrades.reduce(
-      (sum, trade) => sum + trade.entryFee + trade.exitFee,
+      (sum, trade) => sum + trade.entryFee * trade.entryPrice + trade.exitFee,
       0,
     );
     const wins = todayTrades.filter((trade) => trade.netPnl > 0).length;
@@ -211,7 +211,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
                   </div>
                   <div className={`trade-pnl ${trade.netPnl >= 0 ? "positive" : "negative"}`}>
                     <strong>{money(trade.netPnl, true)}</strong>
-                    <span>手续费 {money(trade.entryFee + trade.exitFee)}</span>
+                    <span>手续费 {money(trade.entryFee * trade.entryPrice + trade.exitFee)}</span>
                   </div>
                 </div>
                 {(trade.note || true) && (
@@ -244,7 +244,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
               <label><span>平仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.exitPrice} onChange={(e) => setDraft({ ...draft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
               <label><span>数量</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value })} /><b>HYPE</b></div></label>
               <label><span>交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
-              <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>USDT</b></div></label>
+              <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>HYPE</b></div></label>
               <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDT</b></div></label>
             </div>
 

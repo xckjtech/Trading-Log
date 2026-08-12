@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     const entryFee = numberField(body.entryFee || 0, "开仓手续费", true);
     const exitFee = numberField(body.exitFee || 0, "平仓手续费", true);
     const grossPnl = (exitPrice - entryPrice) * quantity;
-    const netPnl = grossPnl - entryFee - exitFee;
+    const netPnl = grossPnl - entryFee * entryPrice - exitFee;
     const note = typeof body.note === "string" ? body.note.trim().slice(0, 160) : "";
     const db = await getDb();
     const [trade] = await db.insert(trades).values({ userId, tradeDate, side, entryPrice, exitPrice, quantity, entryFee, exitFee, grossPnl, netPnl, note, createdAt: new Date().toISOString() }).returning();
