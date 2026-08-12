@@ -364,7 +364,6 @@ export default function TradeJournal({
       </header>
 
       <section className="hero">
-        <div className="eyebrow"><span className="live-dot" /> TODAY · HYPE / DOGE · USDT</div>
         <div className="pnl-row">
           <div>
             <p>今日净收益</p>
