@@ -33,6 +33,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .brand div { display: flex; align-items: center; }
 .brand strong { font-size: 14px; letter-spacing: -.2px; }
 .user-chip { width: 34px; height: 34px; border: 1px solid #38413e; border-radius: 50%; display: grid; place-items: center; color: var(--mint-soft); background: #171d1b; font-weight: 700; font-size: 13px; }
+.access-chip { padding: 7px 9px; border: 1px solid #38413e; border-radius: 7px; color: #aeb7b3; background: #171d1b; font-size: 10px; }
 
 .hero { padding: 37px 0 27px; }
 .eyebrow, .section-kicker { color: #6e7b76; font: 650 10px/1.2 var(--font-geist-mono); letter-spacing: 1.6px; }
@@ -117,6 +118,8 @@ button { -webkit-tap-highlight-color: transparent; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .error-banner { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; padding: 10px 12px; background: rgba(255,107,114,.08); border: 1px solid rgba(255,107,114,.18); border-radius: 8px; color: #ff9aa0; font-size: 11px; }
 .error-banner button { border: 0; background: none; color: inherit; font-size: 18px; cursor: pointer; }
+.read-only-banner { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: -3px 0 12px; padding: 10px 12px; border: 1px solid rgba(135,146,142,.18); border-radius: 8px; color: #87928e; background: rgba(135,146,142,.05); font-size: 10px; line-height: 1.45; }
+.read-only-banner a { flex: 0 0 auto; color: var(--mint-soft); text-decoration: none; }
 
 .add-button { position: fixed; left: 50%; bottom: max(22px, env(safe-area-inset-bottom)); transform: translateX(-50%); width: min(calc(100% - 40px), 780px); height: 54px; border: 0; border-radius: 10px; background: var(--yellow); color: #0e130f; font-weight: 760; font-size: 14px; cursor: pointer; box-shadow: 0 15px 38px rgba(0,0,0,.48), 0 0 28px rgba(214,255,70,.12); z-index: 5; }
 .add-button span { font-size: 21px; line-height: 0; margin-right: 5px; vertical-align: -1px; }

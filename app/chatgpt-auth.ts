@@ -39,6 +39,12 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
   };
 }
 
+export function isTradingLogOwner(user: ChatGPTUser | null): boolean {
+  if (process.env.NODE_ENV === "development") return true;
+  const ownerEmail = process.env.TRADING_LOG_OWNER_EMAIL?.trim().toLowerCase();
+  return Boolean(user && ownerEmail && user.email.toLowerCase() === ownerEmail);
+}
+
 export async function requireChatGPTUser(
   returnTo: string,
 ): Promise<ChatGPTUser> {

@@ -1,12 +1,13 @@
 import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { trades } from "../../../db/schema";
-import { getChatGPTUser } from "../../chatgpt-auth";
+import { getChatGPTUser, isTradingLogOwner, type ChatGPTUser } from "../../chatgpt-auth";
 
-async function currentUserId() {
-  if (process.env.NODE_ENV === "development") return "local-preview";
-  const user = await getChatGPTUser();
-  return user?.userId ?? null;
+async function currentUser(): Promise<ChatGPTUser | null> {
+  if (process.env.NODE_ENV === "development") {
+    return { displayName: "Joe", email: "local@preview", userId: "local-preview", fullName: "Joe" };
+  }
+  return getChatGPTUser();
 }
 
 function numberField(value: unknown, name: string, allowZero = false) {
@@ -18,11 +19,9 @@ function numberField(value: unknown, name: string, allowZero = false) {
 }
 
 export async function GET() {
-  const userId = await currentUserId();
-  if (!userId) return Response.json({ error: "请先登录" }, { status: 401 });
   try {
     const db = await getDb();
-    const rows = await db.select().from(trades).where(eq(trades.userId, userId)).orderBy(desc(trades.tradeDate), desc(trades.id)).limit(300);
+    const rows = await db.select().from(trades).orderBy(desc(trades.tradeDate), desc(trades.id)).limit(300);
     return Response.json({ trades: rows });
   } catch (error) {
     return Response.json({ error: error instanceof Error ? error.message : "记录加载失败" }, { status: 500 });
@@ -30,8 +29,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const userId = await currentUserId();
-  if (!userId) return Response.json({ error: "请先登录" }, { status: 401 });
+  const user = await currentUser();
+  if (!isTradingLogOwner(user)) return Response.json({ error: "只有站点所有者可以记录交易" }, { status: 403 });
+  const userId = user!.userId;
   try {
     const body = (await request.json()) as Record<string, unknown>;
     const symbol = body.symbol === "DOGE" ? "DOGE" : body.symbol === "HYPE" || body.symbol === undefined ? "HYPE" : null;
@@ -56,8 +56,8 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const userId = await currentUserId();
-  if (!userId) return Response.json({ error: "请先登录" }, { status: 401 });
+  const user = await currentUser();
+  if (!isTradingLogOwner(user)) return Response.json({ error: "只有站点所有者可以删除交易" }, { status: 403 });
   const id = Number(new URL(request.url).searchParams.get("id"));
   if (!Number.isInteger(id) || id <= 0) return Response.json({ error: "记录编号无效" }, { status: 400 });
   const db = await getDb();

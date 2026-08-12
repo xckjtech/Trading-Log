@@ -240,7 +240,15 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
   );
 }
 
-export default function TradeJournal({ displayName }: { displayName: string }) {
+export default function TradeJournal({
+  displayName,
+  canWrite,
+  signInHref,
+}: {
+  displayName: string;
+  canWrite: boolean;
+  signInHref?: string;
+}) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [showForm, setShowForm] = useState(false);
@@ -346,9 +354,13 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
             <strong>Trading Log</strong>
           </div>
         </div>
-        <div className="user-chip" title={displayName}>
-          {displayName.slice(0, 1).toUpperCase()}
-        </div>
+        {canWrite ? (
+          <div className="user-chip owner-chip" title={displayName}>
+            {displayName.slice(0, 1).toUpperCase()}
+          </div>
+        ) : (
+          <div className="access-chip" title="访客只能浏览交易记录">只读浏览</div>
+        )}
       </header>
 
       <section className="hero">
@@ -407,6 +419,12 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
           </div>
         </div>
 
+        {!canWrite && (
+          <div className="read-only-banner">
+            <span>当前为只读浏览，只有站点所有者可以新增或删除交易。</span>
+            {signInHref && <a href={signInHref}>登录</a>}
+          </div>
+        )}
         {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
 
         <div className="trade-list">
@@ -435,7 +453,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
                 {(trade.note || true) && (
                   <div className="trade-foot">
                     <p>{trade.note || "未填写交易备注"}</p>
-                    <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>
+                    {canWrite && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
                   </div>
                 )}
               </article>
@@ -444,11 +462,13 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
         </div>
       </section>
 
-      <button className="add-button" onClick={() => setShowForm(true)}>
-        <span>＋</span> 记录一笔交易
-      </button>
+      {canWrite && (
+        <button className="add-button" onClick={() => setShowForm(true)}>
+          <span>＋</span> 记录一笔交易
+        </button>
+      )}
 
-      {showForm && (
+      {canWrite && showForm && (
         <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setShowForm(false)}>
           <form className="trade-form" onSubmit={submitTrade}>
             <div className="form-handle" />
