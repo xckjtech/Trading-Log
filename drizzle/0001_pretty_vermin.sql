@@ -1,0 +1,1 @@
+ALTER TABLE `trades` ADD `symbol` text DEFAULT 'HYPE' NOT NULL;

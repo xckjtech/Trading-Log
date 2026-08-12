@@ -1,4 +1,4 @@
-const STATIC_CACHE = "day-trading-log-static-v1";
+const STATIC_CACHE = "trading-log-static-v2";
 const STATIC_ASSETS = [
   "/offline.html",
   "/icons/icon-192.png",

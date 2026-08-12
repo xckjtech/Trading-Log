@@ -12,6 +12,7 @@ export async function getDb() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         trade_date TEXT NOT NULL,
+        symbol TEXT NOT NULL DEFAULT 'HYPE',
         side TEXT NOT NULL CHECK (side IN ('long', 'short')),
         entry_price REAL NOT NULL,
         exit_price REAL NOT NULL,
@@ -25,6 +26,11 @@ export async function getDb() {
       )`),
       env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_trades_user_date ON trades(user_id, trade_date)"),
     ]);
+    try {
+      await env.DB.prepare("ALTER TABLE trades ADD COLUMN symbol TEXT NOT NULL DEFAULT 'HYPE'").run();
+    } catch (error) {
+      if (!String(error).toLowerCase().includes("duplicate column name")) throw error;
+    }
     initialized = true;
   }
   return drizzle(env.DB, { schema });

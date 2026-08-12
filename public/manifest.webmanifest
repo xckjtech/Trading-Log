@@ -1,8 +1,8 @@
 {
   "id": "/?pwa=1",
-  "name": "Day Trading Log",
-  "short_name": "Day Trading",
-  "description": "HYPE 现货多单的手机端交易记录、净收益与复盘工具。",
+  "name": "Trading Log",
+  "short_name": "Trading Log",
+  "description": "HYPE 和 DOGE 现货多单的手机端交易记录、净收益与复盘工具。",
   "lang": "zh-CN",
   "dir": "ltr",
   "start_url": "/?pwa=1",

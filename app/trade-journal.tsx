@@ -5,6 +5,7 @@ import { FormEvent, PointerEvent, useCallback, useEffect, useMemo, useRef, useSt
 type Trade = {
   id: number;
   tradeDate: string;
+  symbol?: "HYPE" | "DOGE";
   side: "long" | "short";
   entryPrice: number;
   exitPrice: number;
@@ -19,6 +20,7 @@ type Trade = {
 
 type Draft = {
   tradeDate: string;
+  symbol: "HYPE" | "DOGE";
   entryPrice: string;
   exitPrice: string;
   quantity: string;
@@ -40,6 +42,7 @@ const today = () => {
 
 const emptyDraft = (): Draft => ({
   tradeDate: today(),
+  symbol: "HYPE",
   entryPrice: "",
   exitPrice: "",
   quantity: "",
@@ -56,6 +59,8 @@ const money = (value: number, signed = false) =>
 
 const compact = (value: number) =>
   value.toLocaleString("en-US", { maximumFractionDigits: 6 });
+
+const tradeSymbol = (trade: Trade) => trade.symbol ?? "HYPE";
 
 function previewPnl(draft: Draft) {
   const entry = Number(draft.entryPrice) || 0;
@@ -168,13 +173,26 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
       ctx.fill();
       ctx.stroke();
 
+      points.forEach((point, index) => {
+        ctx.fillStyle = lineColor;
+        ctx.beginPath();
+        ctx.arc(x(index), y(point.cumulative), 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
       ctx.fillStyle = "#66716d";
       ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace";
       ctx.textBaseline = "bottom";
-      ctx.textAlign = "left";
-      ctx.fillText(points[0].date.slice(5).replace("-", "/"), pad.left, height - 5);
-      ctx.textAlign = "right";
-      ctx.fillText(points.at(-1)!.date.slice(5).replace("-", "/"), width - pad.right, height - 5);
+      const labelStep = Math.max(1, Math.ceil((points.length - 1) / 6));
+      const labelIndexes = [...new Set([
+        ...Array.from({ length: points.length }, (_, index) => index).filter((index) => index % labelStep === 0),
+        points.length - 1,
+      ])];
+      labelIndexes.forEach((index) => {
+        const pointX = x(index);
+        ctx.textAlign = index === 0 ? "left" : index === points.length - 1 ? "right" : "center";
+        ctx.fillText(points[index].date.slice(5).replace("-", "/"), pointX, height - 5);
+      });
     };
 
     draw();
@@ -325,7 +343,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
         <div className="brand">
           <span className="brand-mark">H</span>
           <div>
-            <strong>Day Trading Log</strong>
+            <strong>Trading Log</strong>
           </div>
         </div>
         <div className="user-chip" title={displayName}>
@@ -334,7 +352,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
       </header>
 
       <section className="hero">
-        <div className="eyebrow"><span className="live-dot" /> TODAY · HYPE / USDT</div>
+        <div className="eyebrow"><span className="live-dot" /> TODAY · HYPE / DOGE · USDT</div>
         <div className="pnl-row">
           <div>
             <p>今日净收益</p>
@@ -365,7 +383,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
           <div className="strategy-meta"><span className="strategy-count">7 条纪律</span><span className="strategy-chevron">⌄</span></div>
         </summary>
         <ol className="strategy-list">
-          <li><span>01</span><p>只做 <strong>HYPE 现货多单</strong></p></li>
+          <li><span>01</span><p>只做 <strong>HYPE / DOGE 现货多单</strong></p></li>
           <li><span>02</span><p>单次最多 <strong>50 枚</strong></p></li>
           <li><span>03</span><p>买入前先确定<strong>止损</strong></p></li>
           <li><span>04</span><p>正常单笔计划亏损控制在约 <strong>20–40 USDT</strong>，绝对不要超过 <strong className="danger-text">73 USDT</strong></p></li>
@@ -398,7 +416,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
             <div className="empty-state">
               <div className="empty-icon">↗</div>
               <strong>{filter === "today" ? "今天还没有交易" : "还没有交易记录"}</strong>
-              <span>完成一笔 HYPE 交易后，在这里记下来。</span>
+              <span>完成一笔 HYPE 或 DOGE 交易后，在这里记下来。</span>
             </div>
           ) : (
             visibleTrades.map((trade) => (
@@ -407,7 +425,7 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
                   <span className="side-pill long">做多</span>
                   <div className="trade-prices">
                     <strong>{compact(trade.entryPrice)} <i>→</i> {compact(trade.exitPrice)}</strong>
-                    <span>{trade.tradeDate} · {compact(trade.quantity)} HYPE</span>
+                    <span>{trade.tradeDate} · {compact(trade.quantity)} {tradeSymbol(trade)}</span>
                   </div>
                   <div className={`trade-pnl ${trade.netPnl >= 0 ? "positive" : "negative"}`}>
                     <strong>{money(trade.netPnl, true)}</strong>
@@ -439,12 +457,21 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
               <button type="button" className="close-button" onClick={() => setShowForm(false)}>×</button>
             </div>
 
+            <span className="field-label">交易币种</span>
+            <div className="symbol-select">
+              {(["HYPE", "DOGE"] as const).map((symbol) => (
+                <button key={symbol} type="button" className={draft.symbol === symbol ? "selected" : ""} onClick={() => setDraft({ ...draft, symbol })}>
+                  {symbol}
+                </button>
+              ))}
+            </div>
+
             <div className="field-grid">
               <label><span>开仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.entryPrice} onChange={(e) => setDraft({ ...draft, entryPrice: e.target.value })} /><b>USDT</b></div></label>
               <label><span>平仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.exitPrice} onChange={(e) => setDraft({ ...draft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
-              <label><span>数量</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value })} /><b>HYPE</b></div></label>
+              <label><span>数量</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value })} /><b>{draft.symbol}</b></div></label>
               <label><span>交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
-              <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>HYPE</b></div></label>
+              <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>{draft.symbol}</b></div></label>
               <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDT</b></div></label>
             </div>
 

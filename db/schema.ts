@@ -6,6 +6,7 @@ export const trades = sqliteTable(
     id: integer("id").primaryKey({ autoIncrement: true }),
     userId: text("user_id").notNull(),
     tradeDate: text("trade_date").notNull(),
+    symbol: text("symbol", { enum: ["HYPE", "DOGE"] }).notNull().default("HYPE"),
     side: text("side", { enum: ["long", "short"] }).notNull(),
     entryPrice: real("entry_price").notNull(),
     exitPrice: real("exit_price").notNull(),
