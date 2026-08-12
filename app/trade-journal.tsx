@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, PointerEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type Trade = {
   id: number;
@@ -25,6 +25,12 @@ type Draft = {
   entryFee: string;
   exitFee: string;
   note: string;
+};
+
+type GrowthPoint = {
+  date: string;
+  daily: number;
+  cumulative: number;
 };
 
 const today = () => {
@@ -58,6 +64,162 @@ function previewPnl(draft: Draft) {
   const fees = (Number(draft.entryFee) || 0) * entry + (Number(draft.exitFee) || 0);
   const gross = (exit - entry) * quantity;
   return gross - fees;
+}
+
+function GrowthChart({ points }: { points: GrowthPoint[] }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [selectedIndex, setSelectedIndex] = useState(() => Math.max(0, points.length - 1));
+  const selected = points[Math.min(selectedIndex, points.length - 1)];
+
+  useEffect(() => {
+    setSelectedIndex(Math.max(0, points.length - 1));
+  }, [points.length]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || points.length < 3) return;
+
+    const draw = () => {
+      const width = canvas.getBoundingClientRect().width;
+      const height = 190;
+      const ratio = window.devicePixelRatio || 1;
+      canvas.width = Math.round(width * ratio);
+      canvas.height = Math.round(height * ratio);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      ctx.clearRect(0, 0, width, height);
+
+      const pad = { top: 17, right: 14, bottom: 28, left: 14 };
+      const plotWidth = width - pad.left - pad.right;
+      const plotHeight = height - pad.top - pad.bottom;
+      const values = points.map((point) => point.cumulative);
+      const rawMin = Math.min(0, ...values);
+      const rawMax = Math.max(0, ...values);
+      const baseRange = rawMax - rawMin || Math.max(Math.abs(rawMax), 1);
+      const min = rawMin - baseRange * 0.14;
+      const max = rawMax + baseRange * 0.14;
+      const x = (index: number) => pad.left + (index / (points.length - 1)) * plotWidth;
+      const y = (value: number) => pad.top + ((max - value) / (max - min)) * plotHeight;
+      const lineColor = points.at(-1)!.cumulative >= 0 ? "#39e6a4" : "#ff6b72";
+
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = "rgba(135,146,142,.13)";
+      for (let row = 0; row <= 3; row += 1) {
+        const gridY = pad.top + (plotHeight / 3) * row;
+        ctx.beginPath();
+        ctx.moveTo(pad.left, gridY);
+        ctx.lineTo(width - pad.right, gridY);
+        ctx.stroke();
+      }
+
+      const zeroY = y(0);
+      ctx.save();
+      ctx.setLineDash([4, 5]);
+      ctx.strokeStyle = "rgba(214,255,70,.32)";
+      ctx.beginPath();
+      ctx.moveTo(pad.left, zeroY);
+      ctx.lineTo(width - pad.right, zeroY);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(x(index), y(point.cumulative));
+        else ctx.lineTo(x(index), y(point.cumulative));
+      });
+      ctx.lineTo(x(points.length - 1), pad.top + plotHeight);
+      ctx.lineTo(x(0), pad.top + plotHeight);
+      ctx.closePath();
+      const fill = ctx.createLinearGradient(0, pad.top, 0, pad.top + plotHeight);
+      fill.addColorStop(0, points.at(-1)!.cumulative >= 0 ? "rgba(57,230,164,.20)" : "rgba(255,107,114,.18)");
+      fill.addColorStop(1, "rgba(9,13,12,0)");
+      ctx.fillStyle = fill;
+      ctx.fill();
+
+      ctx.beginPath();
+      points.forEach((point, index) => {
+        if (index === 0) ctx.moveTo(x(index), y(point.cumulative));
+        else ctx.lineTo(x(index), y(point.cumulative));
+      });
+      ctx.lineWidth = 2;
+      ctx.lineJoin = "round";
+      ctx.lineCap = "round";
+      ctx.strokeStyle = lineColor;
+      ctx.shadowColor = lineColor;
+      ctx.shadowBlur = 8;
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      const active = Math.min(selectedIndex, points.length - 1);
+      const activeX = x(active);
+      const activeY = y(points[active].cumulative);
+      ctx.strokeStyle = "rgba(244,247,245,.20)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(activeX, pad.top);
+      ctx.lineTo(activeX, pad.top + plotHeight);
+      ctx.stroke();
+      ctx.fillStyle = "#0d1210";
+      ctx.strokeStyle = lineColor;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(activeX, activeY, 4.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#66716d";
+      ctx.font = "9px ui-monospace, SFMono-Regular, Menlo, monospace";
+      ctx.textBaseline = "bottom";
+      ctx.textAlign = "left";
+      ctx.fillText(points[0].date.slice(5).replace("-", "/"), pad.left, height - 5);
+      ctx.textAlign = "right";
+      ctx.fillText(points.at(-1)!.date.slice(5).replace("-", "/"), width - pad.right, height - 5);
+    };
+
+    draw();
+    const observer = new ResizeObserver(draw);
+    observer.observe(canvas);
+    return () => observer.disconnect();
+  }, [points, selectedIndex]);
+
+  function selectPoint(event: PointerEvent<HTMLCanvasElement>) {
+    if (points.length < 3) return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const plotWidth = Math.max(1, rect.width - 28);
+    const position = Math.min(1, Math.max(0, (event.clientX - rect.left - 14) / plotWidth));
+    setSelectedIndex(Math.round(position * (points.length - 1)));
+  }
+
+  return (
+    <section className="growth-card">
+      <div className="growth-head">
+        <div><span className="section-kicker">PERFORMANCE</span><h2>收益增长</h2></div>
+        <span className="day-count">{points.length} 个交易日</span>
+      </div>
+      {points.length < 3 ? (
+        <div className="growth-empty">
+          <span className="growth-symbol">↗</span>
+          <div><strong>继续记录后生成曲线</strong><small>累计满 3 个交易日即可查看收益趋势</small></div>
+        </div>
+      ) : (
+        <>
+          <div className="chart-summary">
+            <div><span>{selected.date}</span><small>当日 {money(selected.daily, true)}</small></div>
+            <strong className={selected.cumulative >= 0 ? "positive" : "negative"}>{money(selected.cumulative, true)}</strong>
+          </div>
+          <canvas
+            ref={canvasRef}
+            className="growth-canvas"
+            onPointerDown={selectPoint}
+            onPointerMove={(event) => event.pointerType === "mouse" && selectPoint(event)}
+            role="img"
+            aria-label={`累计净收益曲线，最新总收益 ${money(points.at(-1)!.cumulative, true)}`}
+          />
+        </>
+      )}
+    </section>
+  );
 }
 
 export default function TradeJournal({ displayName }: { displayName: string }) {
@@ -95,6 +257,17 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
     () => trades.reduce((sum, trade) => sum + trade.netPnl, 0),
     [trades],
   );
+  const growthPoints = useMemo(() => {
+    const daily = new Map<string, number>();
+    trades.forEach((trade) => daily.set(trade.tradeDate, (daily.get(trade.tradeDate) ?? 0) + trade.netPnl));
+    let cumulative = 0;
+    return [...daily.entries()]
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, dailyNet]) => {
+        cumulative += dailyNet;
+        return { date, daily: dailyNet, cumulative };
+      });
+  }, [trades]);
   const stats = useMemo(() => {
     const net = todayTrades.reduce((sum, trade) => sum + trade.netPnl, 0);
     const fees = todayTrades.reduce(
@@ -186,6 +359,8 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
           </strong>
         </div>
       </section>
+
+      <GrowthChart points={growthPoints} />
 
       <section className="journal-section">
         <div className="section-heading">
