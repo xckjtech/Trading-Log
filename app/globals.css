@@ -30,9 +30,8 @@ button { -webkit-tap-highlight-color: transparent; }
 .topbar { height: 78px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(255,255,255,.055); }
 .brand { display: flex; align-items: center; gap: 11px; }
 .brand-mark { width: 35px; height: 35px; display: grid; place-items: center; background: var(--yellow); color: #0c110d; font: 800 18px/1 var(--font-geist-mono); border-radius: 9px 3px 9px 3px; transform: skew(-5deg); box-shadow: 0 0 22px rgba(214,255,70,.14); }
-.brand div { display: flex; flex-direction: column; gap: 2px; }
+.brand div { display: flex; align-items: center; }
 .brand strong { font-size: 14px; letter-spacing: -.2px; }
-.brand div span { color: var(--muted); font: 500 9px/1 var(--font-geist-mono); letter-spacing: 1.2px; text-transform: uppercase; }
 .user-chip { width: 34px; height: 34px; border: 1px solid #38413e; border-radius: 50%; display: grid; place-items: center; color: var(--mint-soft); background: #171d1b; font-weight: 700; font-size: 13px; }
 
 .hero { padding: 37px 0 27px; }
