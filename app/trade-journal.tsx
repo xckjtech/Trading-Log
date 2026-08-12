@@ -33,7 +33,11 @@ type GrowthPoint = {
   date: string;
   daily: number;
   cumulative: number;
+  equity: number;
+  baseline?: boolean;
 };
+
+const STARTING_CAPITAL = 20_000;
 
 const today = () => {
   const date = new Date();
@@ -71,10 +75,10 @@ function previewPnl(draft: Draft) {
   return gross - fees;
 }
 
-function GrowthChart({ points }: { points: GrowthPoint[] }) {
+function GrowthChart({ points, tradingDayCount }: { points: GrowthPoint[]; tradingDayCount: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [selectedIndex, setSelectedIndex] = useState(() => Math.max(0, points.length - 1));
-  const selected = points[Math.min(selectedIndex, points.length - 1)];
+  const selected = points.length ? points[Math.min(selectedIndex, points.length - 1)] : undefined;
 
   useEffect(() => {
     setSelectedIndex(Math.max(0, points.length - 1));
@@ -82,11 +86,11 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || points.length < 3) return;
+    if (!canvas || points.length === 0) return;
 
     const draw = () => {
       const width = canvas.getBoundingClientRect().width;
-      const height = 190;
+      const height = 172;
       const ratio = window.devicePixelRatio || 1;
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
@@ -98,13 +102,13 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
       const pad = { top: 17, right: 14, bottom: 28, left: 14 };
       const plotWidth = width - pad.left - pad.right;
       const plotHeight = height - pad.top - pad.bottom;
-      const values = points.map((point) => point.cumulative);
-      const rawMin = Math.min(0, ...values);
-      const rawMax = Math.max(0, ...values);
-      const baseRange = rawMax - rawMin || Math.max(Math.abs(rawMax), 1);
+      const values = points.map((point) => point.equity);
+      const rawMin = Math.min(...values);
+      const rawMax = Math.max(...values);
+      const baseRange = rawMax - rawMin || Math.max(Math.abs(rawMax) * 0.02, 1);
       const min = rawMin - baseRange * 0.14;
       const max = rawMax + baseRange * 0.14;
-      const x = (index: number) => pad.left + (index / (points.length - 1)) * plotWidth;
+      const x = (index: number) => pad.left + (index / Math.max(points.length - 1, 1)) * plotWidth;
       const y = (value: number) => pad.top + ((max - value) / (max - min)) * plotHeight;
       const lineColor = points.at(-1)!.cumulative >= 0 ? "#39e6a4" : "#ff6b72";
 
@@ -118,20 +122,20 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
         ctx.stroke();
       }
 
-      const zeroY = y(0);
+      const baselineY = y(points[0].equity);
       ctx.save();
       ctx.setLineDash([4, 5]);
-      ctx.strokeStyle = "rgba(214,255,70,.32)";
+      ctx.strokeStyle = "rgba(214,255,70,.28)";
       ctx.beginPath();
-      ctx.moveTo(pad.left, zeroY);
-      ctx.lineTo(width - pad.right, zeroY);
+      ctx.moveTo(pad.left, baselineY);
+      ctx.lineTo(width - pad.right, baselineY);
       ctx.stroke();
       ctx.restore();
 
       ctx.beginPath();
       points.forEach((point, index) => {
-        if (index === 0) ctx.moveTo(x(index), y(point.cumulative));
-        else ctx.lineTo(x(index), y(point.cumulative));
+        if (index === 0) ctx.moveTo(x(index), y(point.equity));
+        else ctx.lineTo(x(index), y(point.equity));
       });
       ctx.lineTo(x(points.length - 1), pad.top + plotHeight);
       ctx.lineTo(x(0), pad.top + plotHeight);
@@ -144,8 +148,8 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
 
       ctx.beginPath();
       points.forEach((point, index) => {
-        if (index === 0) ctx.moveTo(x(index), y(point.cumulative));
-        else ctx.lineTo(x(index), y(point.cumulative));
+        if (index === 0) ctx.moveTo(x(index), y(point.equity));
+        else ctx.lineTo(x(index), y(point.equity));
       });
       ctx.lineWidth = 2;
       ctx.lineJoin = "round";
@@ -158,7 +162,7 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
 
       const active = Math.min(selectedIndex, points.length - 1);
       const activeX = x(active);
-      const activeY = y(points[active].cumulative);
+      const activeY = y(points[active].equity);
       ctx.strokeStyle = "rgba(244,247,245,.20)";
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -176,7 +180,7 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
       points.forEach((point, index) => {
         ctx.fillStyle = lineColor;
         ctx.beginPath();
-        ctx.arc(x(index), y(point.cumulative), 2.5, 0, Math.PI * 2);
+        ctx.arc(x(index), y(point.equity), 2.5, 0, Math.PI * 2);
         ctx.fill();
       });
 
@@ -191,7 +195,8 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
       labelIndexes.forEach((index) => {
         const pointX = x(index);
         ctx.textAlign = index === 0 ? "left" : index === points.length - 1 ? "right" : "center";
-        ctx.fillText(points[index].date.slice(5).replace("-", "/"), pointX, height - 5);
+        const label = points[index].baseline ? "起始" : points[index].date.slice(5).replace("-", "/");
+        ctx.fillText(label, pointX, height - 5);
       });
     };
 
@@ -202,7 +207,7 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
   }, [points, selectedIndex]);
 
   function selectPoint(event: PointerEvent<HTMLCanvasElement>) {
-    if (points.length < 3) return;
+    if (points.length === 0) return;
     const rect = event.currentTarget.getBoundingClientRect();
     const plotWidth = Math.max(1, rect.width - 28);
     const position = Math.min(1, Math.max(0, (event.clientX - rect.left - 14) / plotWidth));
@@ -213,18 +218,18 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
     <section className="growth-card">
       <div className="growth-head">
         <div><span className="section-kicker">PERFORMANCE</span><h2>收益增长</h2></div>
-        <span className="day-count">{points.length} 个交易日</span>
+        <span className="day-count">{tradingDayCount} 个交易日</span>
       </div>
-      {points.length < 3 ? (
+      {points.length === 0 ? (
         <div className="growth-empty">
           <span className="growth-symbol">↗</span>
-          <div><strong>继续记录后生成曲线</strong><small>累计满 3 个交易日即可查看收益趋势</small></div>
+          <div><strong>记录后生成净值曲线</strong><small>账户净值会从起始本金展开</small></div>
         </div>
       ) : (
         <>
           <div className="chart-summary">
-            <div><span>{selected.date}</span><small>当日 {money(selected.daily, true)}</small></div>
-            <strong className={selected.cumulative >= 0 ? "positive" : "negative"}>{money(selected.cumulative, true)}</strong>
+            <div><span>{selected!.baseline ? "起始本金" : selected!.date}</span><small>{selected!.baseline ? "账户起点" : `当日 ${money(selected!.daily, true)}`}</small></div>
+            <strong className={selected!.cumulative >= 0 ? "positive" : "negative"}>{money(selected!.equity)}</strong>
           </div>
           <canvas
             ref={canvasRef}
@@ -232,10 +237,35 @@ function GrowthChart({ points }: { points: GrowthPoint[] }) {
             onPointerDown={selectPoint}
             onPointerMove={(event) => event.pointerType === "mouse" && selectPoint(event)}
             role="img"
-            aria-label={`累计净收益曲线，最新总收益 ${money(points.at(-1)!.cumulative, true)}`}
+            aria-label={`账户净值增长曲线，最新净值 ${money(points.at(-1)!.equity)}`}
           />
         </>
       )}
+    </section>
+  );
+}
+
+function CapitalOverview({ currentEquity, totalNet, returnRate }: { currentEquity: number; totalNet: number; returnRate: number }) {
+  return (
+    <section className="capital-overview" aria-label="资金概览">
+      <div className="capital-heading">
+        <div><span className="section-kicker">ACCOUNT</span><h2>资金概览</h2></div>
+        <span className="capital-currency">USD / USDT</span>
+      </div>
+      <div className="capital-grid">
+        <div className="capital-metric">
+          <span>起始本金</span>
+          <strong>{money(STARTING_CAPITAL)}</strong>
+        </div>
+        <div className="capital-metric">
+          <span>当前净值</span>
+          <strong className={currentEquity >= STARTING_CAPITAL ? "positive" : "negative"}>{money(currentEquity)}</strong>
+        </div>
+        <div className="capital-metric">
+          <span>累计回报</span>
+          <strong className={totalNet >= 0 ? "positive" : "negative"}>{totalNet > 0 ? "+" : ""}{returnRate.toFixed(2)}%</strong>
+        </div>
+      </div>
     </section>
   );
 }
@@ -286,28 +316,38 @@ export default function TradeJournal({
   const growthPoints = useMemo(() => {
     const daily = new Map<string, number>();
     trades.forEach((trade) => daily.set(trade.tradeDate, (daily.get(trade.tradeDate) ?? 0) + trade.netPnl));
+    const sortedDaily = [...daily.entries()].sort(([dateA], [dateB]) => dateA.localeCompare(dateB));
+    if (sortedDaily.length === 0) return [];
+
     let cumulative = 0;
-    return [...daily.entries()]
-      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
-      .map(([date, dailyNet]) => {
+    const firstDate = sortedDaily[0][0];
+    return [
+      { date: firstDate, daily: 0, cumulative: 0, equity: STARTING_CAPITAL, baseline: true },
+      ...sortedDaily.map(([date, dailyNet]) => {
         cumulative += dailyNet;
-        return { date, daily: dailyNet, cumulative };
-      });
+        return { date, daily: dailyNet, cumulative, equity: STARTING_CAPITAL + cumulative };
+      }),
+    ];
   }, [trades]);
+  const currentEquity = STARTING_CAPITAL + totalNet;
+  const returnRate = (totalNet / STARTING_CAPITAL) * 100;
   const stats = useMemo(() => {
-    const net = todayTrades.reduce((sum, trade) => sum + trade.netPnl, 0);
-    const fees = todayTrades.reduce(
+    const scopedTrades = filter === "today" ? todayTrades : trades;
+    const net = scopedTrades.reduce((sum, trade) => sum + trade.netPnl, 0);
+    const fees = scopedTrades.reduce(
       (sum, trade) => sum + trade.entryFee * trade.entryPrice + trade.exitFee,
       0,
     );
-    const wins = todayTrades.filter((trade) => trade.netPnl > 0).length;
+    const wins = scopedTrades.filter((trade) => trade.netPnl > 0).length;
     return {
       net,
       fees,
-      count: todayTrades.length,
-      winRate: todayTrades.length ? (wins / todayTrades.length) * 100 : 0,
+      count: scopedTrades.length,
+      winRate: scopedTrades.length ? (wins / scopedTrades.length) * 100 : 0,
     };
-  }, [todayTrades]);
+  }, [filter, todayTrades, trades]);
+
+  const summaryScope = filter === "today" ? "今日" : "全部";
 
   const pnlPreview = previewPnl(draft);
 
@@ -363,48 +403,31 @@ export default function TradeJournal({
         )}
       </header>
 
-      <section className="hero">
-        <div className="pnl-row">
+      <CapitalOverview currentEquity={currentEquity} totalNet={totalNet} returnRate={returnRate} />
+
+      <section className="hero summary-panel">
+        <div className="summary-lead">
           <div>
-            <p>今日净收益</p>
+            <span className="summary-label">{summaryScope}净收益</span>
             <h1 className={stats.net > 0 ? "positive" : stats.net < 0 ? "negative" : ""}>
               {money(stats.net, true)}
             </h1>
           </div>
           <div className={`result-badge ${stats.net >= 0 ? "win" : "loss"}`}>
-            {stats.net >= 0 ? "盈利日" : "亏损日"}
+            <span className="status-dot" />{filter === "today" ? (stats.net >= 0 ? "盈利日" : "亏损日") : (stats.net >= 0 ? "累计盈利" : "累计亏损")}
           </div>
         </div>
-        <div className="stats-grid">
-          <div><span>交易笔数</span><strong>{stats.count}</strong></div>
-          <div><span>胜率</span><strong>{stats.winRate.toFixed(0)}%</strong></div>
-          <div><span>手续费</span><strong>{money(stats.fees)}</strong></div>
-        </div>
-        <div className="total-return">
-          <div><span>总收益</span><small>全部交易 · 已扣手续费</small></div>
-          <strong className={totalNet > 0 ? "positive" : totalNet < 0 ? "negative" : ""}>
-            {money(totalNet, true)}
-          </strong>
+        <div className="summary-grid">
+          <div className="summary-total">
+            <span>总收益</span>
+            <strong className={totalNet > 0 ? "positive" : totalNet < 0 ? "negative" : ""}>{money(totalNet, true)}</strong>
+            <small>全部交易 · 已扣手续费</small>
+          </div>
+          <div className="summary-metric"><span>交易笔数 · {summaryScope}</span><strong>{stats.count}</strong></div>
+          <div className="summary-metric"><span>胜率 · {summaryScope}</span><strong>{stats.winRate.toFixed(0)}%</strong></div>
+          <div className="summary-metric"><span>手续费 · {summaryScope}</span><strong>{money(stats.fees)}</strong></div>
         </div>
       </section>
-
-      <details className="strategy-card">
-        <summary className="strategy-head">
-          <div><span className="section-kicker">MY PLAYBOOK</span><h2>我的交易策略</h2></div>
-          <div className="strategy-meta"><span className="strategy-count">7 条纪律</span><span className="strategy-chevron">⌄</span></div>
-        </summary>
-        <ol className="strategy-list">
-          <li><span>01</span><p>只做 <strong>HYPE / DOGE 现货多单</strong></p></li>
-          <li><span>02</span><p>单次最多 <strong>50 枚</strong></p></li>
-          <li><span>03</span><p>买入前先确定<strong>止损</strong></p></li>
-          <li><span>04</span><p>正常单笔计划亏损控制在约 <strong>20–40 USDT</strong>，绝对不要超过 <strong className="danger-text">73 USDT</strong></p></li>
-          <li><span>05</span><p>潜在利润至少是计划亏损的 <strong>2 倍</strong></p></li>
-          <li><span>06</span><p>到止损就卖，不再“等等看”</p></li>
-          <li><span>07</span><p>每笔记录<strong>入场、止损、目标、结果和手续费</strong></p></li>
-        </ol>
-      </details>
-
-      <GrowthChart points={growthPoints} />
 
       <section className="journal-section">
         <div className="section-heading">
@@ -439,27 +462,47 @@ export default function TradeJournal({
             visibleTrades.map((trade) => (
               <article className="trade-card" key={trade.id}>
                 <div className="trade-main">
-                  <span className="side-pill long">做多</span>
-                  <div className="trade-prices">
-                    <strong>{compact(trade.entryPrice)} <i>→</i> {compact(trade.exitPrice)}</strong>
-                    <span>{trade.tradeDate} · {compact(trade.quantity)} {tradeSymbol(trade)}</span>
+                  <div className="trade-identity">
+                    <div className="trade-topline">
+                      <span className="symbol-pill">{tradeSymbol(trade)}</span>
+                      <span className="side-pill long">做多</span>
+                      <span className="trade-date">{trade.tradeDate}</span>
+                    </div>
+                    <strong className="trade-route">{compact(trade.entryPrice)} <i>→</i> {compact(trade.exitPrice)}</strong>
+                    <span className="trade-quantity">{compact(trade.quantity)} {tradeSymbol(trade)}</span>
                   </div>
                   <div className={`trade-pnl ${trade.netPnl >= 0 ? "positive" : "negative"}`}>
                     <strong>{money(trade.netPnl, true)}</strong>
                     <span>手续费 {money(trade.entryFee * trade.entryPrice + trade.exitFee)}</span>
                   </div>
                 </div>
-                {(trade.note || true) && (
-                  <div className="trade-foot">
-                    <p>{trade.note || "未填写交易备注"}</p>
-                    {canWrite && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
-                  </div>
-                )}
+                <div className="trade-foot">
+                  <p>{trade.note || "未填写交易备注"}</p>
+                  {canWrite && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
+                </div>
               </article>
             ))
           )}
         </div>
       </section>
+
+      <GrowthChart points={growthPoints} tradingDayCount={Math.max(0, growthPoints.length - 1)} />
+
+      <details className="strategy-card">
+        <summary className="strategy-head">
+          <div><span className="section-kicker">MY PLAYBOOK</span><h2>我的交易策略</h2></div>
+          <div className="strategy-meta"><span className="strategy-count">7 条纪律</span><span className="strategy-chevron">⌄</span></div>
+        </summary>
+        <ol className="strategy-list">
+          <li><span>01</span><p>只做 <strong>HYPE / DOGE 现货多单</strong></p></li>
+          <li><span>02</span><p>单次最多 <strong>50 枚</strong></p></li>
+          <li><span>03</span><p>买入前先确定<strong>止损</strong></p></li>
+          <li><span>04</span><p>正常单笔计划亏损控制在约 <strong>20–40 USDT</strong>，绝对不要超过 <strong className="danger-text">73 USDT</strong></p></li>
+          <li><span>05</span><p>潜在利润至少是计划亏损的 <strong>2 倍</strong></p></li>
+          <li><span>06</span><p>到止损就卖，不再“等等看”</p></li>
+          <li><span>07</span><p>每笔记录<strong>入场、止损、目标、结果和手续费</strong></p></li>
+        </ol>
+      </details>
 
       {canWrite && (
         <button className="add-button" onClick={() => setShowForm(true)}>
@@ -476,22 +519,38 @@ export default function TradeJournal({
               <button type="button" className="close-button" onClick={() => setShowForm(false)}>×</button>
             </div>
 
-            <span className="field-label">交易币种</span>
-            <div className="symbol-select">
-              {(["HYPE", "DOGE"] as const).map((symbol) => (
-                <button key={symbol} type="button" className={draft.symbol === symbol ? "selected" : ""} onClick={() => setDraft({ ...draft, symbol })}>
-                  {symbol}
-                </button>
-              ))}
+            <div className="form-block">
+              <div className="form-block-head"><span className="form-section-label">市场与日期</span><small>现货 · 只做多</small></div>
+              <div className="form-meta-grid">
+                <div>
+                  <span className="field-label">交易币种</span>
+                  <div className="symbol-select">
+                    {["HYPE", "DOGE"].map((symbol) => (
+                      <button key={symbol} type="button" className={draft.symbol === symbol ? "selected" : ""} onClick={() => setDraft({ ...draft, symbol: symbol as Draft["symbol"] })}>
+                        {symbol}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label><span>交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
+              </div>
             </div>
 
-            <div className="field-grid">
-              <label><span>开仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.entryPrice} onChange={(e) => setDraft({ ...draft, entryPrice: e.target.value })} /><b>USDT</b></div></label>
-              <label><span>平仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.exitPrice} onChange={(e) => setDraft({ ...draft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
-              <label><span>数量</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value })} /><b>{draft.symbol}</b></div></label>
-              <label><span>交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
-              <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>{draft.symbol}</b></div></label>
-              <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDT</b></div></label>
+            <div className="form-block">
+              <span className="form-section-label">价格与数量</span>
+              <div className="field-grid">
+                <label><span>开仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.entryPrice} onChange={(e) => setDraft({ ...draft, entryPrice: e.target.value })} /><b>USDT</b></div></label>
+                <label><span>平仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.exitPrice} onChange={(e) => setDraft({ ...draft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
+                <label><span>数量</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value })} /><b>{draft.symbol}</b></div></label>
+              </div>
+            </div>
+
+            <div className="form-block">
+              <span className="form-section-label">手续费</span>
+              <div className="field-grid">
+                <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>{draft.symbol}</b></div></label>
+                <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDT</b></div></label>
+              </div>
             </div>
 
             <label className="note-field"><span>交易备注 <em>选填</em></span><textarea maxLength={160} placeholder="为什么进场？哪里做得好或需要改进？" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} /></label>
