@@ -360,6 +360,22 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
         </div>
       </section>
 
+      <details className="strategy-card">
+        <summary className="strategy-head">
+          <div><span className="section-kicker">MY PLAYBOOK</span><h2>我的交易策略</h2></div>
+          <div className="strategy-meta"><span className="strategy-count">7 条纪律</span><span className="strategy-chevron">⌄</span></div>
+        </summary>
+        <ol className="strategy-list">
+          <li><span>01</span><p>只做 <strong>HYPE 现货多单</strong></p></li>
+          <li><span>02</span><p>单次最多 <strong>50 枚</strong></p></li>
+          <li><span>03</span><p>买入前先确定<strong>止损</strong></p></li>
+          <li><span>04</span><p>正常单笔计划亏损控制在约 <strong>20–40 USDT</strong>，绝对不要超过 <strong className="danger-text">73 USDT</strong></p></li>
+          <li><span>05</span><p>潜在利润至少是计划亏损的 <strong>2 倍</strong></p></li>
+          <li><span>06</span><p>到止损就卖，不再“等等看”</p></li>
+          <li><span>07</span><p>每笔记录<strong>入场、止损、目标、结果和手续费</strong></p></li>
+        </ol>
+      </details>
+
       <GrowthChart points={growthPoints} />
 
       <section className="journal-section">
