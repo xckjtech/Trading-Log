@@ -325,8 +325,8 @@ export default function TradeJournal({ displayName }: { displayName: string }) {
         <div className="brand">
           <span className="brand-mark">H</span>
           <div>
-            <strong>HYPE Journal</strong>
-            <span>Day Trading Log</span>
+            <strong>Day Trading Log</strong>
+            <span>HYPE · Spot Long Only</span>
           </div>
         </div>
         <div className="user-chip" title={displayName}>

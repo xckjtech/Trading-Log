@@ -11,7 +11,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
   const origin = host ? `${protocol}://${host}` : "https://hype-journal.example";
-  const title = "HYPE Journal — 交易日志";
+  const title = "Day Trading Log — HYPE 交易日志";
   const description = "为 HYPE Day Trader 设计的手机端交易记录与盈亏统计工具。";
   return {
     title,
