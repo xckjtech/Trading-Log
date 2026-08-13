@@ -37,6 +37,9 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(html, /<title>Joe's Trading Log<\/title>/i);
   assert.match(html, /Joe(?:&apos;|&#x27;|&#39;|')s Trading Log/);
   assert.match(html, /资金概览/);
+  assert.match(html, /资金概览[\s\S]*起始本金[\s\S]*当前净值[\s\S]*总收益[\s\S]*累计回报/);
+  assert.match(html, /今日(?:<!-- -->)?表现/);
+  assert.match(html, /净收益 · (?:<!-- -->)?今日/);
   assert.match(html, /交易记录/);
   assert.match(html, /收益增长/);
   assert.match(html, /manifest\.webmanifest/);

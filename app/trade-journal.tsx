@@ -270,6 +270,10 @@ function CapitalOverview({ currentEquity, totalNet, returnRate }: { currentEquit
           <strong className={currentEquity >= STARTING_CAPITAL ? "positive" : "negative"}>{money(currentEquity)}</strong>
         </div>
         <div className="capital-metric">
+          <span>总收益</span>
+          <strong className={totalNet > 0 ? "positive" : totalNet < 0 ? "negative" : ""}>{money(totalNet, true)}</strong>
+        </div>
+        <div className="capital-metric">
           <span>累计回报</span>
           <strong className={totalNet >= 0 ? "positive" : "negative"}>{totalNet > 0 ? "+" : ""}{returnRate.toFixed(2)}%</strong>
         </div>
@@ -548,21 +552,16 @@ export default function TradeJournal({
       <CapitalOverview currentEquity={currentEquity} totalNet={totalNet} returnRate={returnRate} />
 
       <section className="hero summary-panel">
-        <div className="summary-lead">
-          <div>
-            <span className="summary-label">{summaryScope}净收益</span>
-            <h1 className={stats.net > 0 ? "positive" : stats.net < 0 ? "negative" : ""}>
-              {money(stats.net, true)}
-            </h1>
-          </div>
+        <div className="summary-heading">
+          <h2>{summaryScope}表现</h2>
           <div className={`result-badge ${stats.net >= 0 ? "win" : "loss"}`}>
             <span className="status-dot" />{filter === "today" ? (stats.net >= 0 ? "盈利日" : "亏损日") : (stats.net >= 0 ? "累计盈利" : "累计亏损")}
           </div>
         </div>
         <div className="summary-grid">
           <div className="summary-metric">
-            <span>总收益</span>
-            <strong className={totalNet > 0 ? "positive" : totalNet < 0 ? "negative" : ""}>{money(totalNet, true)}</strong>
+            <span>净收益 · {summaryScope}</span>
+            <strong className={stats.net > 0 ? "positive" : stats.net < 0 ? "negative" : ""}>{money(stats.net, true)}</strong>
           </div>
           <div className="summary-metric"><span>交易笔数 · {summaryScope}</span><strong>{stats.count}</strong></div>
           <div className="summary-metric"><span>胜率 · {summaryScope}</span><strong>{stats.winRate.toFixed(0)}%</strong></div>

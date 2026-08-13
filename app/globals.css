@@ -39,7 +39,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .capital-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
 .capital-heading h2 { margin: 0; font-size: 19px; letter-spacing: -.6px; }
 .capital-currency { padding: 5px 8px; color: #78837f; background: #111614; border: 1px solid #2a332f; border-radius: 6px; font: 500 9px/1 var(--font-geist-mono); }
-.capital-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 15px; border-top: 1px solid var(--line); }
+.capital-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); margin-top: 15px; border-top: 1px solid var(--line); }
 .capital-metric { min-width: 0; display: flex; flex-direction: column; gap: 6px; padding: 12px 14px 0; border-right: 1px solid var(--line); }
 .capital-metric:first-child { padding-left: 0; }
 .capital-metric:last-child { padding-right: 0; border-right: 0; }
@@ -50,17 +50,16 @@ button { -webkit-tap-highlight-color: transparent; }
 .hero { padding: 28px 0 20px; }
 .eyebrow, .section-kicker { color: #6e7b76; font: 650 10px/1.2 var(--font-geist-mono); letter-spacing: 1.6px; }
 .live-dot { display: inline-block; width: 6px; height: 6px; background: var(--mint); border-radius: 50%; margin: 0 8px 1px 0; box-shadow: 0 0 10px var(--mint); }
-.summary-panel { display: grid; gap: 18px; }
-.summary-lead { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; }
-.summary-label { display: block; margin-bottom: 7px; color: #a1aaa6; font-size: 13px; }
-.summary-lead h1 { margin: 0; font: 650 clamp(42px, 10vw, 60px)/.96 var(--font-geist-mono); letter-spacing: -3px; font-variant-numeric: tabular-nums; }
+.summary-panel { display: grid; gap: 14px; }
+.summary-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.summary-heading h2 { margin: 0; font-size: 19px; letter-spacing: -.6px; }
 .positive { color: var(--mint) !important; }
 .negative { color: var(--red) !important; }
-.result-badge { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; margin-bottom: 4px; padding: 6px 9px; border-radius: 6px; font-size: 11px; font-weight: 650; }
+.result-badge { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; padding: 6px 9px; border-radius: 6px; font-size: 11px; font-weight: 650; }
 .result-badge.win { color: var(--mint); background: rgba(57,230,164,.08); border: 1px solid rgba(57,230,164,.16); }
 .result-badge.loss { color: var(--red); background: rgba(255,107,114,.08); border: 1px solid rgba(255,107,114,.16); }
 .status-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-.summary-grid { display: grid; grid-template-columns: minmax(0, 1.45fr) repeat(3, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .summary-grid > div { min-width: 0; padding: 12px 14px; border-right: 1px solid var(--line); }
 .summary-grid > div:first-child { padding-left: 0; }
 .summary-grid > div:last-child { padding-right: 0; border-right: 0; }
@@ -178,12 +177,11 @@ button { -webkit-tap-highlight-color: transparent; }
   .capital-overview { margin-top: 14px; padding-inline: 12px; }
   .capital-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .capital-metric { padding-inline: 10px; padding-bottom: 11px; }
-  .capital-metric:first-child { padding-left: 0; }
-  .capital-metric:nth-child(2) { padding-right: 0; border-right: 0; }
-  .capital-metric:last-child { grid-column: 1 / -1; padding: 12px 0 0; border-top: 1px solid var(--line); border-right: 0; }
+  .capital-metric:nth-child(odd) { padding-left: 0; }
+  .capital-metric:nth-child(even) { padding-right: 0; border-right: 0; }
+  .capital-metric:nth-child(n + 3) { padding-top: 12px; border-top: 1px solid var(--line); }
   .capital-metric strong { font-size: 16px; }
   .hero { padding-top: 23px; }
-  .summary-lead h1 { font-size: 40px; letter-spacing: -2.4px; }
   /* Four metrics need a balanced 2 × 2 layout on narrow screens. A 3-column
      grid leaves the fourth metric stranded at the start of a second row. */
   .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -203,8 +201,5 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 @media (max-width: 340px) {
-  .summary-lead { align-items: flex-start; flex-direction: column; gap: 10px; }
-  .summary-lead h1 { font-size: 37px; }
-  .result-badge { margin-bottom: 0; }
   .trade-date { font-size: 9px; }
 }
