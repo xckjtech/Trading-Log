@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "bigmagic-trading-log",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2026-05-15",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "routes": [
+    { "pattern": "bigmagic.ai", "custom_domain": true }
+  ],
+  "assets": {
+    "directory": "dist/client"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "bigmagic-trading-log",
+      "database_id": "450d5271-ed13-49f9-8c31-b190c9bd1322"
+    }
+  ],
+  "vars": {
+    "TRADING_LOG_AUTH_MODE": "cloudflare_access"
+  },
+  "observability": {
+    "enabled": true
+  }
+}

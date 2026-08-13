@@ -1,0 +1,30 @@
+{
+  "id": "/",
+  "name": "Joe's Trading Log",
+  "short_name": "Joe's Trading Log",
+  "description": "HYPE 和 DOGE 现货多单的手机端交易记录、净收益与复盘工具。",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "prefer_related_applications": false,
+  "orientation": "portrait",
+  "background_color": "#090d0c",
+  "theme_color": "#090d0c",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"]
+}
