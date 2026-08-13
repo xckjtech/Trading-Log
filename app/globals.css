@@ -168,7 +168,7 @@ button { -webkit-tap-highlight-color: transparent; }
   .topbar { height: 68px; }
   .capital-overview { margin-top: 14px; padding-inline: 12px; }
   .capital-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .capital-metric { padding-inline: 10px; }
+  .capital-metric { padding-inline: 10px; padding-bottom: 11px; }
   .capital-metric:first-child { padding-left: 0; }
   .capital-metric:nth-child(2) { padding-right: 0; border-right: 0; }
   .capital-metric:last-child { grid-column: 1 / -1; padding: 12px 0 0; border-top: 1px solid var(--line); border-right: 0; }
