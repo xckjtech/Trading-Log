@@ -60,3 +60,13 @@ test("trade route exports keep public access read-only", async () => {
   assert.match(ownerRoute, /export async function PATCH\s*\(/);
   assert.match(ownerRoute, /export async function DELETE\s*\(/);
 });
+
+test("open positions cannot be deleted", async () => {
+  const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
+  const ownerRoute = await readFile(new URL("../app/owner/api/trades/route.ts", import.meta.url), "utf8");
+
+  assert.match(journal, /\{!isOpen && <button aria-label="删除交易"/);
+  assert.match(ownerRoute, /existing\.status === "open"/);
+  assert.match(ownerRoute, /持仓中的交易不能删除/);
+  assert.match(ownerRoute, /eq\(trades\.status, "closed"\)/);
+});

@@ -517,7 +517,7 @@ export default function TradeJournal({
           {ownerReady && (
             <div className="trade-foot-actions">
               {isOpen && <button className="close-trade-button" onClick={() => openCloseForm(trade)}>记录卖出</button>}
-              <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>
+              {!isOpen && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
             </div>
           )}
         </div>
