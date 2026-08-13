@@ -275,12 +275,15 @@ export default function TradeJournal({
   displayName,
   canWrite,
   signInHref,
+  ownerSessionHref,
 }: {
   displayName: string;
   canWrite: boolean;
   signInHref?: string;
+  ownerSessionHref?: string;
 }) {
   const [trades, setTrades] = useState<Trade[]>([]);
+  const [ownerReady, setOwnerReady] = useState(canWrite);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<"today" | "all">("today");
@@ -311,6 +314,21 @@ export default function TradeJournal({
       mounted = false;
     };
   }, [loadTrades]);
+
+  useEffect(() => {
+    if (!ownerSessionHref || canWrite) return;
+    let mounted = true;
+    void fetch(ownerSessionHref, { cache: "no-store" })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const payload = (await response.json()) as { authenticated?: boolean };
+        if (mounted && payload.authenticated) setOwnerReady(true);
+      })
+      .catch(() => undefined);
+    return () => {
+      mounted = false;
+    };
+  }, [canWrite, ownerSessionHref]);
 
   const todayTrades = useMemo(
     () => trades.filter((trade) => trade.tradeDate === today()),
@@ -364,7 +382,7 @@ export default function TradeJournal({
     setSaving(true);
     setError("");
     try {
-      const response = await fetch("/api/trades", {
+      const response = await fetch(ownerReady ? "/owner/api/trades" : "/api/trades", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(draft),
@@ -385,7 +403,7 @@ export default function TradeJournal({
 
   async function deleteTrade(id: number) {
     if (!window.confirm("删除这笔交易记录？")) return;
-    const response = await fetch(`/api/trades?id=${id}`, { method: "DELETE" });
+    const response = await fetch(`/owner/api/trades?id=${id}`, { method: "DELETE" });
     if (response.ok) {
       setTrades((current) => current.filter((trade) => trade.id !== id));
     } else {
@@ -402,7 +420,7 @@ export default function TradeJournal({
             <strong>Joe&apos;s Trading Log</strong>
           </div>
         </div>
-        {canWrite ? (
+        {ownerReady ? (
           <div className="user-chip owner-chip" title={displayName}>
             {displayName.slice(0, 1).toUpperCase()}
           </div>
@@ -479,7 +497,7 @@ export default function TradeJournal({
                 </div>
                 <div className="trade-foot">
                   <p>{trade.note || "未填写交易备注"}</p>
-                  {canWrite && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
+                  {ownerReady && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
                 </div>
               </article>
             ))
@@ -489,13 +507,13 @@ export default function TradeJournal({
 
       <GrowthChart points={growthPoints} tradingDayCount={Math.max(0, growthPoints.length - 1)} />
 
-      {canWrite && (
+      {ownerReady && (
         <button className="add-button" onClick={() => setShowForm(true)}>
           <span>＋</span> 记录一笔交易
         </button>
       )}
 
-      {canWrite && showForm && (
+      {ownerReady && showForm && (
         <div className="modal-backdrop">
           <button type="button" className="modal-backdrop-dismiss" aria-label="关闭记录交易窗口" onClick={() => setShowForm(false)} />
           <form className="trade-form" onSubmit={submitTrade}>

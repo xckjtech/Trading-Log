@@ -13,6 +13,7 @@ const USER_EMAIL_HEADER = "oai-authenticated-user-email";
 const USER_FULL_NAME_HEADER = "oai-authenticated-user-full-name";
 const USER_FULL_NAME_ENCODING_HEADER =
   "oai-authenticated-user-full-name-encoding";
+const ACCESS_EMAIL_HEADER = "cf-access-authenticated-user-email";
 const PERCENT_ENCODED_UTF8 = "percent-encoded-utf-8";
 const SIGN_IN_PATH = "/signin-with-chatgpt";
 const SIGN_OUT_PATH = "/signout-with-chatgpt";
@@ -37,6 +38,23 @@ export async function getChatGPTUser(): Promise<ChatGPTUser | null> {
     email,
     fullName,
   };
+}
+
+export async function getCloudflareAccessUser(): Promise<ChatGPTUser | null> {
+  const requestHeaders = await headers();
+  const email = requestHeaders.get(ACCESS_EMAIL_HEADER)?.trim().toLowerCase();
+  if (!email) return null;
+
+  return {
+    userId: `access:${email}`,
+    displayName: email,
+    email,
+    fullName: null,
+  };
+}
+
+export async function getCurrentUser(): Promise<ChatGPTUser | null> {
+  return (await getChatGPTUser()) ?? (await getCloudflareAccessUser());
 }
 
 export function isTradingLogOwner(user: ChatGPTUser | null): boolean {

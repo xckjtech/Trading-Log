@@ -1,13 +1,13 @@
 import { and, desc, eq } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { trades } from "../../../db/schema";
-import { getChatGPTUser, isTradingLogOwner, type ChatGPTUser } from "../../chatgpt-auth";
+import { getCurrentUser, isTradingLogOwner, type ChatGPTUser } from "../../chatgpt-auth";
 
 async function currentUser(): Promise<ChatGPTUser | null> {
   if (process.env.NODE_ENV === "development") {
     return { displayName: "Joe", email: "local@preview", userId: "local-preview", fullName: "Joe" };
   }
-  return getChatGPTUser();
+  return getCurrentUser();
 }
 
 function numberField(value: unknown, name: string, allowZero = false) {
