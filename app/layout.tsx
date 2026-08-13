@@ -17,8 +17,6 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title,
     description,
-    manifest: "/manifest.webmanifest",
-    themeColor: "#090d0c",
     icons: {
       icon: [
         { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
@@ -35,6 +33,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="zh-CN">
       <head>
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <meta name="theme-color" content="#090d0c" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
