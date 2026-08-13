@@ -498,12 +498,11 @@ export default function TradeJournal({
           <form className="trade-form" onSubmit={submitTrade}>
             <div className="form-handle" />
             <div className="form-head">
-              <div><span className="section-kicker">NEW TRADE</span><h2>记录交易</h2></div>
-              <button type="button" className="close-button" onClick={() => setShowForm(false)}>×</button>
+              <div><h2>记录交易</h2></div>
+              <button type="button" className="close-button" aria-label="关闭" onClick={() => setShowForm(false)}>×</button>
             </div>
 
             <div className="form-block">
-              <div className="form-block-head"><span className="form-section-label">市场与日期</span><small>现货 · 只做多</small></div>
               <div className="form-meta-grid">
                 <div>
                   <span className="field-label">交易币种</span>
@@ -515,12 +514,11 @@ export default function TradeJournal({
                     ))}
                   </div>
                 </div>
-                <label><span>交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
+                <label><span className="field-label">交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
               </div>
             </div>
 
             <div className="form-block">
-              <span className="form-section-label">价格与数量</span>
               <div className="field-grid">
                 <label><span>开仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.entryPrice} onChange={(e) => setDraft({ ...draft, entryPrice: e.target.value })} /><b>USDT</b></div></label>
                 <label><span>平仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.exitPrice} onChange={(e) => setDraft({ ...draft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
@@ -529,7 +527,6 @@ export default function TradeJournal({
             </div>
 
             <div className="form-block">
-              <span className="form-section-label">手续费</span>
               <div className="field-grid">
                 <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>{draft.symbol}</b></div></label>
                 <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDT</b></div></label>
@@ -539,7 +536,7 @@ export default function TradeJournal({
             <label className="note-field"><span>交易备注 <em>选填</em></span><textarea maxLength={160} placeholder="为什么进场？哪里做得好或需要改进？" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} /></label>
 
             <div className="preview-row">
-              <span>预计净收益 <small>已扣手续费</small></span>
+              <span>预计净收益</span>
               <strong className={pnlPreview >= 0 ? "positive" : "negative"}>{money(pnlPreview, true)}</strong>
             </div>
             <button className="save-button" disabled={saving}>{saving ? "正在保存…" : "保存交易记录"}</button>
