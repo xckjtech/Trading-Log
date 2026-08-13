@@ -131,6 +131,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .add-button:focus-visible, .save-button:focus-visible, .close-button:focus-visible, .filter-toggle button:focus-visible, .symbol-select button:focus-visible, .trade-foot button:focus-visible, .access-chip:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
 
 .modal-backdrop { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.78); overscroll-behavior: contain; }
+.modal-backdrop-dismiss { position: absolute; inset: 0; border: 0; padding: 0; background: transparent; cursor: default; }
 .trade-form { position: relative; width: min(100%, 680px); max-height: 93dvh; overflow-y: auto; padding: 11px 22px calc(22px + env(safe-area-inset-bottom)); background: #111614; border: 1px solid #303936; border-bottom: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -30px 70px rgba(0,0,0,.55); }
 .form-handle { width: 38px; height: 4px; background: #3b4541; border-radius: 5px; margin: 0 auto 17px; }
 .form-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
@@ -174,9 +175,14 @@ button { -webkit-tap-highlight-color: transparent; }
   .capital-metric strong { font-size: 16px; }
   .hero { padding-top: 23px; }
   .summary-lead h1 { font-size: 40px; letter-spacing: -2.4px; }
-  .summary-grid { grid-template-columns: repeat(3, 1fr); }
+  /* Four metrics need a balanced 2 × 2 layout on narrow screens. A 3-column
+     grid leaves the fourth metric stranded at the start of a second row. */
+  .summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .summary-metric { padding: 11px 9px !important; }
   .summary-metric:first-of-type { padding-left: 0 !important; }
+  .summary-metric:nth-child(2) { padding-right: 0 !important; border-right: 0; }
+  .summary-metric:nth-child(n + 3) { border-top: 1px solid var(--line); }
+  .summary-metric:nth-child(3) { padding-left: 0 !important; }
   .summary-metric:last-child { padding-right: 0 !important; }
   .trade-card { margin-inline: 0; }
   .trade-main { gap: 9px; padding: 13px 14px 10px; }

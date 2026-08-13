@@ -77,12 +77,11 @@ function previewPnl(draft: Draft) {
 
 function GrowthChart({ points, tradingDayCount }: { points: GrowthPoint[]; tradingDayCount: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [selectedIndex, setSelectedIndex] = useState(() => Math.max(0, points.length - 1));
-  const selected = points.length ? points[Math.min(selectedIndex, points.length - 1)] : undefined;
-
-  useEffect(() => {
-    setSelectedIndex(Math.max(0, points.length - 1));
-  }, [points.length]);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const activeIndex = points.length
+    ? Math.min(selectedIndex ?? points.length - 1, points.length - 1)
+    : 0;
+  const selected = points.length ? points[activeIndex] : undefined;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -160,7 +159,7 @@ function GrowthChart({ points, tradingDayCount }: { points: GrowthPoint[]; tradi
       ctx.stroke();
       ctx.shadowBlur = 0;
 
-      const active = Math.min(selectedIndex, points.length - 1);
+      const active = activeIndex;
       const activeX = x(active);
       const activeY = y(points[active].equity);
       ctx.strokeStyle = "rgba(244,247,245,.20)";
@@ -204,7 +203,7 @@ function GrowthChart({ points, tradingDayCount }: { points: GrowthPoint[]; tradi
     const observer = new ResizeObserver(draw);
     observer.observe(canvas);
     return () => observer.disconnect();
-  }, [points, selectedIndex]);
+  }, [activeIndex, points]);
 
   function selectPoint(event: PointerEvent<HTMLCanvasElement>) {
     if (points.length === 0) return;
@@ -290,20 +289,27 @@ export default function TradeJournal({
   const [error, setError] = useState("");
 
   const loadTrades = useCallback(async () => {
-    try {
-      const response = await fetch("/api/trades", { cache: "no-store" });
-      const payload = (await response.json()) as { trades?: Trade[]; error?: string };
-      if (!response.ok) throw new Error(payload.error || "记录加载失败");
-      setTrades(payload.trades ?? []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "记录加载失败");
-    } finally {
-      setLoading(false);
-    }
+    const response = await fetch("/api/trades", { cache: "no-store" });
+    const payload = (await response.json()) as { trades?: Trade[]; error?: string };
+    if (!response.ok) throw new Error(payload.error || "记录加载失败");
+    return payload.trades ?? [];
   }, []);
 
   useEffect(() => {
-    void loadTrades();
+    let mounted = true;
+    void loadTrades()
+      .then((nextTrades) => {
+        if (mounted) setTrades(nextTrades);
+      })
+      .catch((err) => {
+        if (mounted) setError(err instanceof Error ? err.message : "记录加载失败");
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
+      });
+    return () => {
+      mounted = false;
+    };
   }, [loadTrades]);
 
   const todayTrades = useMemo(
@@ -393,7 +399,7 @@ export default function TradeJournal({
         <div className="brand">
           <span className="brand-mark">₿</span>
           <div>
-            <strong>Joe's Trading Log</strong>
+            <strong>Joe&apos;s Trading Log</strong>
           </div>
         </div>
         {canWrite ? (
@@ -490,7 +496,8 @@ export default function TradeJournal({
       )}
 
       {canWrite && showForm && (
-        <div className="modal-backdrop" onMouseDown={(e) => e.target === e.currentTarget && setShowForm(false)}>
+        <div className="modal-backdrop">
+          <button type="button" className="modal-backdrop-dismiss" aria-label="关闭记录交易窗口" onClick={() => setShowForm(false)} />
           <form className="trade-form" onSubmit={submitTrade}>
             <div className="form-handle" />
             <div className="form-head">
