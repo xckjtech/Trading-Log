@@ -12,13 +12,15 @@ export async function generateMetadata(): Promise<Metadata> {
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "https";
   const origin = host ? `${protocol}://${host}` : "https://hype-journal.example";
-  const title = "Trading Log — HYPE / DOGE 交易日志";
+  const title = "Joe's Trading Log";
   const description = "为 HYPE 和 DOGE 现货多单设计的手机端交易记录与盈亏统计工具。";
   return {
     title,
     description,
     icons: {
+      shortcut: "/favicon.ico",
       icon: [
+        { url: "/favicon.ico" },
         { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
         { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
       ],

@@ -284,6 +284,7 @@ export default function TradeJournal({
 }) {
   const [trades, setTrades] = useState<Trade[]>([]);
   const [ownerReady, setOwnerReady] = useState(canWrite);
+  const [activeDisplayName, setActiveDisplayName] = useState(displayName);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
   const [showForm, setShowForm] = useState(false);
   const [filter, setFilter] = useState<"today" | "all">("today");
@@ -321,8 +322,14 @@ export default function TradeJournal({
     void fetch(ownerSessionHref, { cache: "no-store" })
       .then(async (response) => {
         if (!response.ok) return;
-        const payload = (await response.json()) as { authenticated?: boolean };
-        if (mounted && payload.authenticated) setOwnerReady(true);
+        const payload = (await response.json()) as {
+          authenticated?: boolean;
+          displayName?: string;
+        };
+        if (mounted && payload.authenticated) {
+          setOwnerReady(true);
+          if (payload.displayName) setActiveDisplayName(payload.displayName);
+        }
       })
       .catch(() => undefined);
     return () => {
@@ -421,8 +428,8 @@ export default function TradeJournal({
           </div>
         </div>
         {ownerReady ? (
-          <div className="user-chip owner-chip" title={displayName}>
-            {displayName.slice(0, 1).toUpperCase()}
+          <div className="user-chip owner-chip" title={activeDisplayName}>
+            {activeDisplayName.slice(0, 1).toUpperCase()}
           </div>
         ) : signInHref ? (
           <a className="access-chip login-link" href={signInHref}>登录</a>
@@ -518,23 +525,19 @@ export default function TradeJournal({
           <button type="button" className="modal-backdrop-dismiss" aria-label="关闭记录交易窗口" onClick={() => setShowForm(false)} />
           <form className="trade-form" onSubmit={submitTrade}>
             <div className="form-handle" />
-            <div className="form-head">
-              <div><h2>记录交易</h2></div>
-              <button type="button" className="close-button" aria-label="关闭" onClick={() => setShowForm(false)}>×</button>
-            </div>
+            <button type="button" className="close-button" aria-label="关闭" onClick={() => setShowForm(false)}>×</button>
 
             <div className="form-block">
               <div className="form-meta-grid">
-                <div>
+                <label>
                   <span className="field-label">交易币种</span>
-                  <div className="symbol-select">
-                    {["HYPE", "DOGE"].map((symbol) => (
-                      <button key={symbol} type="button" className={draft.symbol === symbol ? "selected" : ""} onClick={() => setDraft({ ...draft, symbol: symbol as Draft["symbol"] })}>
-                        {symbol}
-                      </button>
-                    ))}
+                  <div className="input-wrap symbol-select-wrap">
+                    <select aria-label="交易币种" className="symbol-select" value={draft.symbol} onChange={(e) => setDraft({ ...draft, symbol: e.target.value as Draft["symbol"] })}>
+                      <option value="HYPE">HYPE</option>
+                      <option value="DOGE">DOGE</option>
+                    </select>
                   </div>
-                </div>
+                </label>
                 <label><span className="field-label">交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
               </div>
             </div>
@@ -553,8 +556,6 @@ export default function TradeJournal({
                 <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDT</b></div></label>
               </div>
             </div>
-
-            <label className="note-field"><span>交易备注 <em>选填</em></span><textarea maxLength={160} placeholder="为什么进场？哪里做得好或需要改进？" value={draft.note} onChange={(e) => setDraft({ ...draft, note: e.target.value })} /></label>
 
             <div className="preview-row">
               <span>预计净收益</span>

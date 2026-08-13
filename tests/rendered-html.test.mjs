@@ -28,12 +28,13 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Trading Log — HYPE \/ DOGE 交易日志<\/title>/i);
+  assert.match(html, /<title>Joe's Trading Log<\/title>/i);
   assert.match(html, /Joe(?:&apos;|&#x27;|&#39;|')s Trading Log/);
   assert.match(html, /资金概览/);
   assert.match(html, /交易记录/);
   assert.match(html, /收益增长/);
   assert.match(html, /manifest\.webmanifest/);
+  assert.match(html, /favicon\.ico/);
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|codex-preview/);
 });
 
