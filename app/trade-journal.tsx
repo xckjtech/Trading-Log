@@ -553,12 +553,27 @@ export default function TradeJournal({
 
       <section className="hero summary-panel">
         <div className="summary-heading">
-          <h2>{summaryScope}表现</h2>
+          <div className="filter-toggle" role="group" aria-label="统计与交易记录范围">
+            <button
+              type="button"
+              className={filter === "today" ? "active" : ""}
+              aria-pressed={filter === "today"}
+              aria-controls="performance-summary trade-records"
+              onClick={() => setFilter("today")}
+            >今日</button>
+            <button
+              type="button"
+              className={filter === "all" ? "active" : ""}
+              aria-pressed={filter === "all"}
+              aria-controls="performance-summary trade-records"
+              onClick={() => setFilter("all")}
+            >全部</button>
+          </div>
           <div className={`result-badge ${stats.net >= 0 ? "win" : "loss"}`}>
             <span className="status-dot" />{filter === "today" ? (stats.net >= 0 ? "盈利日" : "亏损日") : (stats.net >= 0 ? "累计盈利" : "累计亏损")}
           </div>
         </div>
-        <div className="summary-grid">
+        <div className="summary-grid" id="performance-summary">
           <div className="summary-metric">
             <span>净收益 · {summaryScope}</span>
             <strong className={stats.net > 0 ? "positive" : stats.net < 0 ? "negative" : ""}>{money(stats.net, true)}</strong>
@@ -586,15 +601,11 @@ export default function TradeJournal({
           <div>
             <h2>交易记录</h2>
           </div>
-          <div className="filter-toggle" role="group" aria-label="记录范围">
-            <button className={filter === "today" ? "active" : ""} onClick={() => setFilter("today")}>今日</button>
-            <button className={filter === "all" ? "active" : ""} onClick={() => setFilter("all")}>全部</button>
-          </div>
         </div>
 
         {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
 
-        <div className="trade-list">
+        <div className="trade-list" id="trade-records">
           {loading ? (
             <div className="empty-state"><span className="loader" />正在读取记录…</div>
           ) : visibleTrades.length === 0 ? (

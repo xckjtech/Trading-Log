@@ -38,7 +38,7 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(html, /Joe(?:&apos;|&#x27;|&#39;|')s Trading Log/);
   assert.match(html, /资金概览/);
   assert.match(html, /资金概览[\s\S]*起始本金[\s\S]*当前净值[\s\S]*总收益[\s\S]*累计回报/);
-  assert.match(html, /今日(?:<!-- -->)?表现/);
+  assert.match(html, /统计与交易记录范围/);
   assert.match(html, /净收益 · (?:<!-- -->)?今日/);
   assert.match(html, /交易记录/);
   assert.match(html, /收益增长/);
@@ -46,6 +46,18 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(html, /favicon\.ico/);
   assert.doesNotMatch(html, /\/Users\/|\.vinext\/fonts/);
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|codex-preview/);
+});
+
+test("one range toggle controls both performance and trade records", async () => {
+  const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
+  const toggles = journal.match(/className="filter-toggle"/g) ?? [];
+  const summaryToggle = journal.indexOf('aria-label="统计与交易记录范围"');
+  const tradeHeading = journal.indexOf("<h2>交易记录</h2>");
+
+  assert.equal(toggles.length, 1);
+  assert.ok(summaryToggle > journal.indexOf('className="summary-heading"'));
+  assert.ok(summaryToggle < tradeHeading);
+  assert.doesNotMatch(journal, /<h2>\{summaryScope\}表现<\/h2>/);
 });
 
 test("production fonts use public portable assets", async () => {
