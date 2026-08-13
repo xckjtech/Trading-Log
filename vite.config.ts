@@ -14,9 +14,6 @@ const localBindingConfig = {
       database_id: "450d5271-ed13-49f9-8c31-b190c9bd1322",
     },
   ],
-  vars: {
-    TRADING_LOG_AUTH_MODE: "cloudflare_access",
-  },
 };
 
 export default defineConfig(async () => {

@@ -8,9 +8,8 @@ Cloudflare account.
 - `bigmagic.ai` is a custom domain of the `bigmagic-trading-log` Worker.
 - Trade records are stored in the `bigmagic-trading-log` D1 database.
 - A trade is recorded in two steps: save the buy as an open position, then add the sell details to realize its profit or loss.
-- Reading is public; `/owner/*` is protected by Cloudflare Access.
-- The application no longer depends on ChatGPT Sites for production traffic,
-  authentication, or data storage.
+- Reading is public; authentication and `/owner/*` write access are handled by
+  Cloudflare Access.
 
 ## Prerequisites
 

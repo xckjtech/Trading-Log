@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser, isTradingLogOwner } from "../../chatgpt-auth";
+import { getCloudflareAccessUser, isTradingLogOwner } from "../../auth";
 
 export async function GET() {
-  const user = await getCurrentUser();
+  const user = await getCloudflareAccessUser();
   if (isTradingLogOwner(user)) redirect("/");
-  return new Response("Owner sign-in is not available yet.", { status: 401 });
+  return new Response("Cloudflare Access authentication required.", { status: 401 });
 }

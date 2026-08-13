@@ -1,7 +1,7 @@
-import { getCurrentUser, isTradingLogOwner } from "../../chatgpt-auth";
+import { getCloudflareAccessUser, isTradingLogOwner } from "../../auth";
 
 export async function GET() {
-  const user = await getCurrentUser();
+  const user = await getCloudflareAccessUser();
   if (!user || !isTradingLogOwner(user)) {
     return Response.json({ authenticated: false }, { status: 401 });
   }
