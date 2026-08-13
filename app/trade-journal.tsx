@@ -400,6 +400,8 @@ export default function TradeJournal({
           <div className="user-chip owner-chip" title={displayName}>
             {displayName.slice(0, 1).toUpperCase()}
           </div>
+        ) : signInHref ? (
+          <a className="access-chip login-link" href={signInHref}>登录</a>
         ) : (
           <div className="access-chip" title="访客只能浏览交易记录">只读浏览</div>
         )}
@@ -441,12 +443,6 @@ export default function TradeJournal({
           </div>
         </div>
 
-        {!canWrite && (
-          <div className="read-only-banner">
-            <span>当前为只读浏览，只有站点所有者可以新增或删除交易。</span>
-            {signInHref && <a href={signInHref}>登录</a>}
-          </div>
-        )}
         {error && <div className="error-banner">{error}<button onClick={() => setError("")}>×</button></div>}
 
         <div className="trade-list">
@@ -465,12 +461,12 @@ export default function TradeJournal({
                     <div className="trade-topline">
                       <span className="symbol-pill">{tradeSymbol(trade)}</span>
                       <span className="side-pill long">做多</span>
-                      <span className="trade-date">{trade.tradeDate}</span>
                     </div>
-                    <strong className="trade-route">{compact(trade.entryPrice)} <i>→</i> {compact(trade.exitPrice)}</strong>
+                    <strong className="trade-route"><span>${compact(trade.entryPrice)}</span><i>→</i><span>${compact(trade.exitPrice)}</span></strong>
                     <span className="trade-quantity">{compact(trade.quantity)} {tradeSymbol(trade)}</span>
                   </div>
                   <div className={`trade-pnl ${trade.netPnl >= 0 ? "positive" : "negative"}`}>
+                    <span className="trade-date">{trade.tradeDate}</span>
                     <strong>{money(trade.netPnl, true)}</strong>
                     <span>手续费 {money(trade.entryFee * trade.entryPrice + trade.exitFee)}</span>
                   </div>
