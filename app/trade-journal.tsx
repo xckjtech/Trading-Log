@@ -215,32 +215,34 @@ function GrowthChart({ points, tradingDayCount }: { points: GrowthPoint[]; tradi
   }
 
   return (
-    <section className="growth-card">
+    <section className="growth-section">
       <div className="growth-head">
-        <div><span className="section-kicker">PERFORMANCE</span><h2>收益增长</h2></div>
+        <div><h2>收益增长</h2></div>
         <span className="day-count">{tradingDayCount} 个交易日</span>
       </div>
-      {points.length === 0 ? (
-        <div className="growth-empty">
-          <span className="growth-symbol">↗</span>
-          <div><strong>记录后生成净值曲线</strong><small>账户净值会从起始本金展开</small></div>
-        </div>
-      ) : (
-        <>
-          <div className="chart-summary">
-            <div><span>{selected!.baseline ? "起始本金" : selected!.date}</span><small>{selected!.baseline ? "账户起点" : `当日 ${money(selected!.daily, true)}`}</small></div>
-            <strong className={selected!.cumulative >= 0 ? "positive" : "negative"}>{money(selected!.equity)}</strong>
+      <div className="growth-card">
+        {points.length === 0 ? (
+          <div className="growth-empty">
+            <span className="growth-symbol growth-chart-icon" aria-hidden="true" />
+            <div><strong>记录后生成净值曲线</strong></div>
           </div>
-          <canvas
-            ref={canvasRef}
-            className="growth-canvas"
-            onPointerDown={selectPoint}
-            onPointerMove={(event) => event.pointerType === "mouse" && selectPoint(event)}
-            role="img"
-            aria-label={`账户净值增长曲线，最新净值 ${money(points.at(-1)!.equity)}`}
-          />
-        </>
-      )}
+        ) : (
+          <>
+            <div className="chart-summary">
+              <div><span>{selected!.baseline ? "起始本金" : selected!.date}</span><small>{selected!.baseline ? "账户起点" : `当日 ${money(selected!.daily, true)}`}</small></div>
+              <strong className={selected!.cumulative >= 0 ? "positive" : "negative"}>{money(selected!.equity)}</strong>
+            </div>
+            <canvas
+              ref={canvasRef}
+              className="growth-canvas"
+              onPointerDown={selectPoint}
+              onPointerMove={(event) => event.pointerType === "mouse" && selectPoint(event)}
+              role="img"
+              aria-label={`账户净值增长曲线，最新净值 ${money(points.at(-1)!.equity)}`}
+            />
+          </>
+        )}
+      </div>
     </section>
   );
 }
@@ -249,7 +251,7 @@ function CapitalOverview({ currentEquity, totalNet, returnRate }: { currentEquit
   return (
     <section className="capital-overview" aria-label="资金概览">
       <div className="capital-heading">
-        <div><span className="section-kicker">ACCOUNT</span><h2>资金概览</h2></div>
+        <div><h2>资金概览</h2></div>
         <span className="capital-currency">USD / USDT</span>
       </div>
       <div className="capital-grid">
@@ -389,9 +391,9 @@ export default function TradeJournal({
     <main className="app-shell">
       <header className="topbar">
         <div className="brand">
-          <span className="brand-mark">H</span>
+          <span className="brand-mark">₿</span>
           <div>
-            <strong>Trading Log</strong>
+            <strong>Joe's Trading Log</strong>
           </div>
         </div>
         {canWrite ? (
@@ -418,10 +420,9 @@ export default function TradeJournal({
           </div>
         </div>
         <div className="summary-grid">
-          <div className="summary-total">
+          <div className="summary-metric">
             <span>总收益</span>
             <strong className={totalNet > 0 ? "positive" : totalNet < 0 ? "negative" : ""}>{money(totalNet, true)}</strong>
-            <small>全部交易 · 已扣手续费</small>
           </div>
           <div className="summary-metric"><span>交易笔数 · {summaryScope}</span><strong>{stats.count}</strong></div>
           <div className="summary-metric"><span>胜率 · {summaryScope}</span><strong>{stats.winRate.toFixed(0)}%</strong></div>
@@ -432,7 +433,6 @@ export default function TradeJournal({
       <section className="journal-section">
         <div className="section-heading">
           <div>
-            <span className="section-kicker">TRADE HISTORY</span>
             <h2>交易记录</h2>
           </div>
           <div className="filter-toggle" role="group" aria-label="记录范围">
@@ -454,9 +454,8 @@ export default function TradeJournal({
             <div className="empty-state"><span className="loader" />正在读取记录…</div>
           ) : visibleTrades.length === 0 ? (
             <div className="empty-state">
-              <div className="empty-icon">↗</div>
+              <div className="empty-icon trade-empty-icon" aria-hidden="true"><span /></div>
               <strong>{filter === "today" ? "今天还没有交易" : "还没有交易记录"}</strong>
-              <span>完成一笔 HYPE 或 DOGE 交易后，在这里记下来。</span>
             </div>
           ) : (
             visibleTrades.map((trade) => (
@@ -487,22 +486,6 @@ export default function TradeJournal({
       </section>
 
       <GrowthChart points={growthPoints} tradingDayCount={Math.max(0, growthPoints.length - 1)} />
-
-      <details className="strategy-card">
-        <summary className="strategy-head">
-          <div><span className="section-kicker">MY PLAYBOOK</span><h2>我的交易策略</h2></div>
-          <div className="strategy-meta"><span className="strategy-count">7 条纪律</span><span className="strategy-chevron">⌄</span></div>
-        </summary>
-        <ol className="strategy-list">
-          <li><span>01</span><p>只做 <strong>HYPE / DOGE 现货多单</strong></p></li>
-          <li><span>02</span><p>单次最多 <strong>50 枚</strong></p></li>
-          <li><span>03</span><p>买入前先确定<strong>止损</strong></p></li>
-          <li><span>04</span><p>正常单笔计划亏损控制在约 <strong>20–40 USDT</strong>，绝对不要超过 <strong className="danger-text">73 USDT</strong></p></li>
-          <li><span>05</span><p>潜在利润至少是计划亏损的 <strong>2 倍</strong></p></li>
-          <li><span>06</span><p>到止损就卖，不再“等等看”</p></li>
-          <li><span>07</span><p>每笔记录<strong>入场、止损、目标、结果和手续费</strong></p></li>
-        </ol>
-      </details>
 
       {canWrite && (
         <button className="add-button" onClick={() => setShowForm(true)}>
