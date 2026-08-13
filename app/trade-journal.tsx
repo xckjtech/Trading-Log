@@ -503,7 +503,7 @@ export default function TradeJournal({
           <div className="trade-identity">
             <div className="trade-topline">
               <span className="symbol-pill">{tradeSymbol(trade)}</span>
-              <span className={`side-pill ${isOpen ? "open" : "long"}`}>{isOpen ? "持仓中" : "做多"}</span>
+              <span className={`side-pill ${isOpen ? "open" : "long"}`}>{isOpen ? "买入" : "做多"}</span>
             </div>
             <strong className="trade-route">
               <span>${compact(trade.entryPrice)}</span><i>→</i><span>{isOpen ? "—" : `$${compact(trade.exitPrice)}`}</span>
@@ -512,7 +512,7 @@ export default function TradeJournal({
           </div>
           <div className={`trade-pnl ${isOpen ? "open-position" : trade.netPnl >= 0 ? "positive" : "negative"}`}>
             <span className="trade-date">{isOpen ? trade.tradeDate : `${trade.tradeDate} → ${completedDate}`}</span>
-            <strong>{isOpen ? "等待卖出" : money(trade.netPnl, true)}</strong>
+            <strong>{isOpen ? "持仓中" : money(trade.netPnl, true)}</strong>
             <span>{isOpen ? "买入手续费" : "手续费"} {money(isOpen ? entryFee : entryFee + trade.exitFee)}</span>
           </div>
         </div>

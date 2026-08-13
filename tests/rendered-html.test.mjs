@@ -60,6 +60,12 @@ test("one range toggle controls both performance and trade records", async () =>
   assert.doesNotMatch(journal, /<h2>\{summaryScope\}表现<\/h2>/);
 });
 
+test("open positions follow the performance summary without an oversized gap", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /\.open-positions-section\s*\{\s*margin:\s*4px 0 30px;/);
+});
+
 test("production fonts use public portable assets", async () => {
   const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
@@ -96,4 +102,12 @@ test("open positions cannot be deleted", async () => {
   assert.match(ownerRoute, /existing\.status === "open"/);
   assert.match(ownerRoute, /持仓中的交易不能删除/);
   assert.match(ownerRoute, /eq\(trades\.status, "closed"\)/);
+});
+
+test("open position cards distinguish the buy action from holding status", async () => {
+  const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
+
+  assert.match(journal, /\{isOpen \? "买入" : "做多"\}/);
+  assert.match(journal, /\{isOpen \? "持仓中" : money\(trade\.netPnl, true\)\}/);
+  assert.doesNotMatch(journal, /\{isOpen \? "等待卖出"/);
 });

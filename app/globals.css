@@ -107,7 +107,7 @@ button { -webkit-tap-highlight-color: transparent; }
 .section-heading { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 14px; }
 .section-heading h2 { margin: 0; font-size: 21px; letter-spacing: -.7px; }
 .position-count { padding: 5px 8px; color: var(--mint); background: rgba(57,230,164,.07); border: 1px solid rgba(57,230,164,.16); border-radius: 6px; font-size: 9px; }
-.open-positions-section { margin-bottom: 30px; }
+.open-positions-section { margin: 4px 0 30px; }
 .filter-toggle { display: flex; padding: 3px; background: #111614; border: 1px solid var(--line); border-radius: 8px; }
 .filter-toggle button { min-height: 32px; border: 0; background: transparent; color: var(--muted); font-size: 11px; padding: 5px 11px; border-radius: 5px; cursor: pointer; }
 .filter-toggle button.active { background: #27302d; color: var(--ink); }
