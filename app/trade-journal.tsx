@@ -346,6 +346,24 @@ export default function TradeJournal({
     };
   }, [canWrite, ownerSessionHref]);
 
+  useEffect(() => {
+    if (!showForm && !closingTrade) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeDrawer = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setShowForm(false);
+      setClosingTrade(null);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeDrawer);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeDrawer);
+    };
+  }, [showForm, closingTrade]);
+
   const openTrades = useMemo(
     () => trades.filter((trade) => trade.status === "open"),
     [trades],
@@ -600,11 +618,10 @@ export default function TradeJournal({
       )}
 
       {ownerReady && showForm && (
-        <div className="modal-backdrop">
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="记录买入">
           <button type="button" className="modal-backdrop-dismiss" aria-label="关闭记录交易窗口" onClick={() => setShowForm(false)} />
           <form className="trade-form" onSubmit={submitTrade}>
-            <div className="form-handle" />
-            <button type="button" className="close-button" aria-label="关闭" onClick={() => setShowForm(false)}>×</button>
+            <div className="form-handle" aria-hidden="true" />
 
             <div className="form-block">
               <div className="form-meta-grid">
@@ -636,11 +653,10 @@ export default function TradeJournal({
       )}
 
       {ownerReady && closingTrade && (
-        <div className="modal-backdrop">
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="记录卖出">
           <button type="button" className="modal-backdrop-dismiss" aria-label="关闭记录卖出窗口" onClick={() => setClosingTrade(null)} />
           <form className="trade-form close-trade-form" onSubmit={closeTrade}>
-            <div className="form-handle" />
-            <button type="button" className="close-button" aria-label="关闭" onClick={() => setClosingTrade(null)}>×</button>
+            <div className="form-handle" aria-hidden="true" />
 
             <div className="close-position-summary">
               <div className="trade-topline">

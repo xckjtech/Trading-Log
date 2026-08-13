@@ -134,13 +134,14 @@ button { -webkit-tap-highlight-color: transparent; }
 .add-button span { font-size: 21px; line-height: 0; margin-right: 5px; vertical-align: -1px; }
 .add-button:active { transform: translateX(-50%) scale(.97); }
 .save-button:active, .filter-toggle button:active { transform: scale(.97); }
-.add-button:focus-visible, .save-button:focus-visible, .close-button:focus-visible, .filter-toggle button:focus-visible, .trade-foot button:focus-visible, .access-chip:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+.add-button:focus-visible, .save-button:focus-visible, .filter-toggle button:focus-visible, .trade-foot button:focus-visible, .access-chip:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
 
-.modal-backdrop { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.78); overscroll-behavior: contain; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 20; display: flex; align-items: flex-end; justify-content: center; background: rgba(0,0,0,.78); overscroll-behavior: contain; animation: drawer-backdrop-in .18s ease-out; }
 .modal-backdrop-dismiss { position: absolute; inset: 0; border: 0; padding: 0; background: transparent; cursor: default; }
-.trade-form { position: relative; width: min(100%, 680px); max-height: 93dvh; overflow-y: auto; padding: 11px 22px calc(22px + env(safe-area-inset-bottom)); background: #111614; border: 1px solid #303936; border-bottom: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -30px 70px rgba(0,0,0,.55); }
+.trade-form { position: relative; width: min(100%, 680px); max-height: 93dvh; overflow-y: auto; padding: 11px 22px calc(22px + env(safe-area-inset-bottom)); background: #111614; border: 1px solid #303936; border-bottom: 0; border-radius: 20px 20px 0 0; box-shadow: 0 -30px 70px rgba(0,0,0,.55); animation: drawer-slide-up .24s cubic-bezier(.22,.8,.28,1); }
 .form-handle { width: 38px; height: 4px; background: #3b4541; border-radius: 5px; margin: 0 auto 17px; }
-.close-button { position: absolute; top: 20px; right: 20px; width: 24px; height: 24px; display: grid; place-items: center; border: 0; background: transparent; color: #aab2af; padding: 0; font-size: 24px; line-height: 1; cursor: pointer; }
+@keyframes drawer-backdrop-in { from { background: rgba(0,0,0,0); } }
+@keyframes drawer-slide-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .form-block { margin-top: 18px; }
 .field-grid label > span, .field-label { display: block; color: #a9b1ae; font-size: 11px; margin-bottom: 8px; }
 .form-meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
@@ -165,8 +166,10 @@ button { -webkit-tap-highlight-color: transparent; }
 
 @media (min-width: 700px) {
   .app-shell { padding-inline: 28px; }
-  .trade-form { margin-bottom: 3vh; border-bottom: 1px solid #303936; border-radius: 20px; }
-  .modal-backdrop { align-items: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-backdrop, .trade-form { animation: none; }
 }
 
 @media (max-width: 430px) {
