@@ -44,7 +44,19 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(html, /收益增长/);
   assert.match(html, /manifest\.webmanifest/);
   assert.match(html, /favicon\.ico/);
+  assert.doesNotMatch(html, /\/Users\/|\.vinext\/fonts/);
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|codex-preview/);
+});
+
+test("production fonts use public portable assets", async () => {
+  const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.doesNotMatch(layout, /next\/font/);
+  assert.match(styles, /font-family:\s*"Trading Geist"/);
+  assert.match(styles, /font-family:\s*"Trading Geist Mono"/);
+  await readFile(new URL("../public/fonts/geist-sans-latin.woff2", import.meta.url));
+  await readFile(new URL("../public/fonts/geist-mono-latin.woff2", import.meta.url));
 });
 
 test("owner session stays closed without Cloudflare Access identity", async () => {

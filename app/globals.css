@@ -1,6 +1,24 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: "Trading Geist";
+  src: url("/fonts/geist-sans-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Trading Geist Mono";
+  src: url("/fonts/geist-mono-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
 :root {
+  --font-geist-sans: "Trading Geist", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-geist-mono: "Trading Geist Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
   --ink: #f4f7f5;
   --muted: #87928e;
   --panel: #141918;
