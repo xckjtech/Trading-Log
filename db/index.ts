@@ -12,8 +12,10 @@ export async function getDb() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         trade_date TEXT NOT NULL,
+        exit_date TEXT,
         symbol TEXT NOT NULL DEFAULT 'HYPE',
         side TEXT NOT NULL CHECK (side IN ('long', 'short')),
+        status TEXT NOT NULL DEFAULT 'closed' CHECK (status IN ('open', 'closed')),
         entry_price REAL NOT NULL,
         exit_price REAL NOT NULL,
         quantity REAL NOT NULL,
@@ -31,6 +33,17 @@ export async function getDb() {
     } catch (error) {
       if (!String(error).toLowerCase().includes("duplicate column name")) throw error;
     }
+    try {
+      await env.DB.prepare("ALTER TABLE trades ADD COLUMN status TEXT NOT NULL DEFAULT 'closed'").run();
+    } catch (error) {
+      if (!String(error).toLowerCase().includes("duplicate column name")) throw error;
+    }
+    try {
+      await env.DB.prepare("ALTER TABLE trades ADD COLUMN exit_date TEXT").run();
+    } catch (error) {
+      if (!String(error).toLowerCase().includes("duplicate column name")) throw error;
+    }
+    await env.DB.prepare("UPDATE trades SET exit_date = trade_date WHERE status = 'closed' AND exit_date IS NULL").run();
     initialized = true;
   }
   return drizzle(env.DB, { schema });

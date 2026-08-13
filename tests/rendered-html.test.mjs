@@ -1,14 +1,16 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-async function render(pathname = "/", headers = {}) {
+async function request(pathname = "/", init = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-${pathname}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
     new Request(`http://localhost${pathname}`, {
-      headers: { accept: "text/html", ...headers },
+      ...init,
+      headers: { accept: "text/html", ...init.headers },
     }),
     {
       ASSETS: {
@@ -20,6 +22,10 @@ async function render(pathname = "/", headers = {}) {
       passThroughOnException() {},
     },
   );
+}
+
+async function render(pathname = "/", headers = {}) {
+  return request(pathname, { headers });
 }
 
 test("server-renders the Trading Log shell", async () => {
@@ -42,4 +48,15 @@ test("owner session stays closed without Cloudflare Access identity", async () =
   const response = await render("/owner/session");
   assert.equal(response.status, 401);
   assert.deepEqual(await response.json(), { authenticated: false });
+});
+
+test("trade route exports keep public access read-only", async () => {
+  const publicRoute = await readFile(new URL("../app/api/trades/route.ts", import.meta.url), "utf8");
+  const ownerRoute = await readFile(new URL("../app/owner/api/trades/route.ts", import.meta.url), "utf8");
+
+  assert.match(publicRoute, /export async function GET\s*\(/);
+  assert.doesNotMatch(publicRoute, /export async function (?:POST|PATCH|DELETE)\s*\(/);
+  assert.match(ownerRoute, /export async function POST\s*\(/);
+  assert.match(ownerRoute, /export async function PATCH\s*\(/);
+  assert.match(ownerRoute, /export async function DELETE\s*\(/);
 });

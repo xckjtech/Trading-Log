@@ -5,8 +5,10 @@ import { FormEvent, PointerEvent, useCallback, useEffect, useMemo, useRef, useSt
 type Trade = {
   id: number;
   tradeDate: string;
+  exitDate: string | null;
   symbol?: "HYPE" | "DOGE";
   side: "long" | "short";
+  status: "open" | "closed";
   entryPrice: number;
   exitPrice: number;
   quantity: number;
@@ -22,11 +24,14 @@ type Draft = {
   tradeDate: string;
   symbol: "HYPE" | "DOGE";
   entryPrice: string;
-  exitPrice: string;
   quantity: string;
   entryFee: string;
+};
+
+type CloseDraft = {
+  exitDate: string;
+  exitPrice: string;
   exitFee: string;
-  note: string;
 };
 
 type GrowthPoint = {
@@ -48,11 +53,14 @@ const emptyDraft = (): Draft => ({
   tradeDate: today(),
   symbol: "HYPE",
   entryPrice: "",
-  exitPrice: "",
   quantity: "",
   entryFee: "",
+});
+
+const emptyCloseDraft = (): CloseDraft => ({
+  exitDate: today(),
+  exitPrice: "",
   exitFee: "",
-  note: "",
 });
 
 const money = (value: number, signed = false) =>
@@ -66,12 +74,11 @@ const compact = (value: number) =>
 
 const tradeSymbol = (trade: Trade) => trade.symbol ?? "HYPE";
 
-function previewPnl(draft: Draft) {
-  const entry = Number(draft.entryPrice) || 0;
+function previewClosePnl(trade: Trade, draft: CloseDraft) {
   const exit = Number(draft.exitPrice) || 0;
-  const quantity = Number(draft.quantity) || 0;
-  const fees = (Number(draft.entryFee) || 0) * entry + (Number(draft.exitFee) || 0);
-  const gross = (exit - entry) * quantity;
+  if (exit <= 0) return 0;
+  const fees = trade.entryFee * trade.entryPrice + (Number(draft.exitFee) || 0);
+  const gross = (exit - trade.entryPrice) * trade.quantity;
   return gross - fees;
 }
 
@@ -286,7 +293,9 @@ export default function TradeJournal({
   const [ownerReady, setOwnerReady] = useState(canWrite);
   const [activeDisplayName, setActiveDisplayName] = useState(displayName);
   const [draft, setDraft] = useState<Draft>(emptyDraft);
+  const [closeDraft, setCloseDraft] = useState<CloseDraft>(emptyCloseDraft);
   const [showForm, setShowForm] = useState(false);
+  const [closingTrade, setClosingTrade] = useState<Trade | null>(null);
   const [filter, setFilter] = useState<"today" | "all">("today");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -337,18 +346,29 @@ export default function TradeJournal({
     };
   }, [canWrite, ownerSessionHref]);
 
-  const todayTrades = useMemo(
-    () => trades.filter((trade) => trade.tradeDate === today()),
+  const openTrades = useMemo(
+    () => trades.filter((trade) => trade.status === "open"),
     [trades],
   );
-  const visibleTrades = filter === "today" ? todayTrades : trades;
-  const totalNet = useMemo(
-    () => trades.reduce((sum, trade) => sum + trade.netPnl, 0),
+  const closedTrades = useMemo(
+    () => trades.filter((trade) => trade.status !== "open"),
     [trades],
+  );
+  const todayTrades = useMemo(
+    () => closedTrades.filter((trade) => (trade.exitDate ?? trade.tradeDate) === today()),
+    [closedTrades],
+  );
+  const visibleTrades = filter === "today" ? todayTrades : closedTrades;
+  const totalNet = useMemo(
+    () => closedTrades.reduce((sum, trade) => sum + trade.netPnl, 0),
+    [closedTrades],
   );
   const growthPoints = useMemo(() => {
     const daily = new Map<string, number>();
-    trades.forEach((trade) => daily.set(trade.tradeDate, (daily.get(trade.tradeDate) ?? 0) + trade.netPnl));
+    closedTrades.forEach((trade) => {
+      const realizedDate = trade.exitDate ?? trade.tradeDate;
+      daily.set(realizedDate, (daily.get(realizedDate) ?? 0) + trade.netPnl);
+    });
     const sortedDaily = [...daily.entries()].sort(([dateA], [dateB]) => dateA.localeCompare(dateB));
     if (sortedDaily.length === 0) return [];
 
@@ -361,16 +381,17 @@ export default function TradeJournal({
         return { date, daily: dailyNet, cumulative, equity: STARTING_CAPITAL + cumulative };
       }),
     ];
-  }, [trades]);
+  }, [closedTrades]);
   const currentEquity = STARTING_CAPITAL + totalNet;
   const returnRate = (totalNet / STARTING_CAPITAL) * 100;
   const stats = useMemo(() => {
-    const scopedTrades = filter === "today" ? todayTrades : trades;
+    const scopedTrades = filter === "today" ? todayTrades : closedTrades;
     const net = scopedTrades.reduce((sum, trade) => sum + trade.netPnl, 0);
-    const fees = scopedTrades.reduce(
-      (sum, trade) => sum + trade.entryFee * trade.entryPrice + trade.exitFee,
-      0,
-    );
+    const fees = trades.reduce((sum, trade) => {
+      const entryFee = filter === "all" || trade.tradeDate === today() ? trade.entryFee * trade.entryPrice : 0;
+      const exitFee = trade.status !== "open" && (filter === "all" || (trade.exitDate ?? trade.tradeDate) === today()) ? trade.exitFee : 0;
+      return sum + entryFee + exitFee;
+    }, 0);
     const wins = scopedTrades.filter((trade) => trade.netPnl > 0).length;
     return {
       net,
@@ -378,11 +399,11 @@ export default function TradeJournal({
       count: scopedTrades.length,
       winRate: scopedTrades.length ? (wins / scopedTrades.length) * 100 : 0,
     };
-  }, [filter, todayTrades, trades]);
+  }, [closedTrades, filter, todayTrades, trades]);
 
   const summaryScope = filter === "today" ? "今日" : "全部";
 
-  const pnlPreview = previewPnl(draft);
+  const pnlPreview = closingTrade ? previewClosePnl(closingTrade, closeDraft) : 0;
 
   async function submitTrade(event: FormEvent) {
     event.preventDefault();
@@ -408,6 +429,37 @@ export default function TradeJournal({
     }
   }
 
+  function openCloseForm(trade: Trade) {
+    setCloseDraft(emptyCloseDraft());
+    setClosingTrade(trade);
+    setError("");
+  }
+
+  async function closeTrade(event: FormEvent) {
+    event.preventDefault();
+    if (!closingTrade) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(`/owner/api/trades?id=${closingTrade.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(closeDraft),
+      });
+      const payload = (await response.json()) as { trade?: Trade; error?: string };
+      if (!response.ok || !payload.trade) {
+        throw new Error(payload.error || "保存失败");
+      }
+      setTrades((current) => current.map((trade) => trade.id === payload.trade!.id ? payload.trade! : trade));
+      setClosingTrade(null);
+      setCloseDraft(emptyCloseDraft());
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function deleteTrade(id: number) {
     if (!window.confirm("删除这笔交易记录？")) return;
     const response = await fetch(`/owner/api/trades?id=${id}`, { method: "DELETE" });
@@ -416,6 +468,43 @@ export default function TradeJournal({
     } else {
       setError("删除失败，请稍后重试");
     }
+  }
+
+  function renderTradeCard(trade: Trade) {
+    const isOpen = trade.status === "open";
+    const entryFee = trade.entryFee * trade.entryPrice;
+    const completedDate = trade.exitDate ?? trade.tradeDate;
+
+    return (
+      <article className={`trade-card ${isOpen ? "open-trade-card" : ""}`} key={trade.id}>
+        <div className="trade-main">
+          <div className="trade-identity">
+            <div className="trade-topline">
+              <span className="symbol-pill">{tradeSymbol(trade)}</span>
+              <span className={`side-pill ${isOpen ? "open" : "long"}`}>{isOpen ? "持仓中" : "做多"}</span>
+            </div>
+            <strong className="trade-route">
+              <span>${compact(trade.entryPrice)}</span><i>→</i><span>{isOpen ? "—" : `$${compact(trade.exitPrice)}`}</span>
+            </strong>
+            <span className="trade-quantity">{compact(trade.quantity)} {tradeSymbol(trade)}</span>
+          </div>
+          <div className={`trade-pnl ${isOpen ? "open-position" : trade.netPnl >= 0 ? "positive" : "negative"}`}>
+            <span className="trade-date">{isOpen ? trade.tradeDate : `${trade.tradeDate} → ${completedDate}`}</span>
+            <strong>{isOpen ? "等待卖出" : money(trade.netPnl, true)}</strong>
+            <span>{isOpen ? "买入手续费" : "手续费"} {money(isOpen ? entryFee : entryFee + trade.exitFee)}</span>
+          </div>
+        </div>
+        <div className="trade-foot">
+          <p>{isOpen ? "买入记录已保存" : trade.note || "交易已完成"}</p>
+          {ownerReady && (
+            <div className="trade-foot-actions">
+              {isOpen && <button className="close-trade-button" onClick={() => openCloseForm(trade)}>记录卖出</button>}
+              <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>
+            </div>
+          )}
+        </div>
+      </article>
+    );
   }
 
   return (
@@ -463,6 +552,18 @@ export default function TradeJournal({
         </div>
       </section>
 
+      {openTrades.length > 0 && (
+        <section className="journal-section open-positions-section">
+          <div className="section-heading">
+            <div><h2>持仓中</h2></div>
+            <span className="position-count">{openTrades.length} 笔</span>
+          </div>
+          <div className="trade-list">
+            {openTrades.map(renderTradeCard)}
+          </div>
+        </section>
+      )}
+
       <section className="journal-section">
         <div className="section-heading">
           <div>
@@ -485,29 +586,7 @@ export default function TradeJournal({
               <strong>{filter === "today" ? "今天还没有交易" : "还没有交易记录"}</strong>
             </div>
           ) : (
-            visibleTrades.map((trade) => (
-              <article className="trade-card" key={trade.id}>
-                <div className="trade-main">
-                  <div className="trade-identity">
-                    <div className="trade-topline">
-                      <span className="symbol-pill">{tradeSymbol(trade)}</span>
-                      <span className="side-pill long">做多</span>
-                    </div>
-                    <strong className="trade-route"><span>${compact(trade.entryPrice)}</span><i>→</i><span>${compact(trade.exitPrice)}</span></strong>
-                    <span className="trade-quantity">{compact(trade.quantity)} {tradeSymbol(trade)}</span>
-                  </div>
-                  <div className={`trade-pnl ${trade.netPnl >= 0 ? "positive" : "negative"}`}>
-                    <span className="trade-date">{trade.tradeDate}</span>
-                    <strong>{money(trade.netPnl, true)}</strong>
-                    <span>手续费 {money(trade.entryFee * trade.entryPrice + trade.exitFee)}</span>
-                  </div>
-                </div>
-                <div className="trade-foot">
-                  <p>{trade.note || "未填写交易备注"}</p>
-                  {ownerReady && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
-                </div>
-              </article>
-            ))
+            visibleTrades.map(renderTradeCard)
           )}
         </div>
       </section>
@@ -538,22 +617,45 @@ export default function TradeJournal({
                     </select>
                   </div>
                 </label>
-                <label><span className="field-label">交易日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
+                <label><span className="field-label">买入日期</span><div className="input-wrap"><input type="date" required value={draft.tradeDate} onChange={(e) => setDraft({ ...draft, tradeDate: e.target.value })} /></div></label>
               </div>
             </div>
 
             <div className="form-block">
               <div className="field-grid">
-                <label><span>开仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.entryPrice} onChange={(e) => setDraft({ ...draft, entryPrice: e.target.value })} /><b>USDT</b></div></label>
-                <label><span>平仓价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.exitPrice} onChange={(e) => setDraft({ ...draft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
+                <label><span>买入价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={draft.entryPrice} onChange={(e) => setDraft({ ...draft, entryPrice: e.target.value })} /><b>USDT</b></div></label>
                 <label><span>数量</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0" value={draft.quantity} onChange={(e) => setDraft({ ...draft, quantity: e.target.value })} /><b>{draft.symbol}</b></div></label>
+                <label><span>买入手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>{draft.symbol}</b></div></label>
               </div>
             </div>
 
+            {error && <div className="form-error">{error}</div>}
+            <button className="save-button entry-save-button" disabled={saving}>{saving ? "正在保存…" : "保存买入记录"}</button>
+          </form>
+        </div>
+      )}
+
+      {ownerReady && closingTrade && (
+        <div className="modal-backdrop">
+          <button type="button" className="modal-backdrop-dismiss" aria-label="关闭记录卖出窗口" onClick={() => setClosingTrade(null)} />
+          <form className="trade-form close-trade-form" onSubmit={closeTrade}>
+            <div className="form-handle" />
+            <button type="button" className="close-button" aria-label="关闭" onClick={() => setClosingTrade(null)}>×</button>
+
+            <div className="close-position-summary">
+              <div className="trade-topline">
+                <span className="symbol-pill">{tradeSymbol(closingTrade)}</span>
+                <span className="side-pill open">持仓中</span>
+              </div>
+              <strong>${compact(closingTrade.entryPrice)}</strong>
+              <span>{compact(closingTrade.quantity)} {tradeSymbol(closingTrade)} · 买入于 {closingTrade.tradeDate}</span>
+            </div>
+
             <div className="form-block">
-              <div className="field-grid">
-                <label><span>开仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.entryFee} onChange={(e) => setDraft({ ...draft, entryFee: e.target.value })} /><b>{draft.symbol}</b></div></label>
-                <label><span>平仓手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={draft.exitFee} onChange={(e) => setDraft({ ...draft, exitFee: e.target.value })} /><b>USDT</b></div></label>
+              <div className="field-grid close-field-grid">
+                <label><span>卖出日期</span><div className="input-wrap"><input type="date" required min={closingTrade.tradeDate} value={closeDraft.exitDate} onChange={(e) => setCloseDraft({ ...closeDraft, exitDate: e.target.value })} /></div></label>
+                <label><span>卖出价格</span><div className="input-wrap"><input inputMode="decimal" required placeholder="0.00" value={closeDraft.exitPrice} onChange={(e) => setCloseDraft({ ...closeDraft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
+                <label><span>卖出手续费</span><div className="input-wrap"><input inputMode="decimal" placeholder="0.00" value={closeDraft.exitFee} onChange={(e) => setCloseDraft({ ...closeDraft, exitFee: e.target.value })} /><b>USDT</b></div></label>
               </div>
             </div>
 
@@ -561,7 +663,8 @@ export default function TradeJournal({
               <span>预计净收益</span>
               <strong className={pnlPreview >= 0 ? "positive" : "negative"}>{money(pnlPreview, true)}</strong>
             </div>
-            <button className="save-button" disabled={saving}>{saving ? "正在保存…" : "保存交易记录"}</button>
+            {error && <div className="form-error">{error}</div>}
+            <button className="save-button" disabled={saving}>{saving ? "正在保存…" : "完成这笔交易"}</button>
           </form>
         </div>
       )}
