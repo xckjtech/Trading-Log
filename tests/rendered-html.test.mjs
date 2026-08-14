@@ -59,6 +59,14 @@ test("tab favicon points to a decodable PNG", async () => {
   assert.equal(icon.readUInt32BE(20), 192);
 });
 
+test("installed PWA hides the root scrollbar without disabling scrolling", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /@media \(display-mode: standalone\)/);
+  assert.match(styles, /html,\s*body\s*\{\s*scrollbar-width:\s*none;/);
+  assert.match(styles, /html::-webkit-scrollbar,\s*body::-webkit-scrollbar\s*\{\s*display:\s*none;/);
+});
+
 test("one range toggle controls both performance and trade records", async () => {
   const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
   const toggles = journal.match(/className="filter-toggle"/g) ?? [];

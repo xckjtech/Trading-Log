@@ -40,6 +40,17 @@ body {
   font-family: var(--font-geist-sans), "PingFang SC", "Microsoft YaHei", sans-serif;
   -webkit-font-smoothing: antialiased;
 }
+
+@media (display-mode: standalone) {
+  html, body {
+    scrollbar-width: none;
+  }
+
+  html::-webkit-scrollbar, body::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 button, input, textarea { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 
