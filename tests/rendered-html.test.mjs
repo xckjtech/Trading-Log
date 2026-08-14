@@ -43,9 +43,18 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(html, /交易记录/);
   assert.match(html, /收益增长/);
   assert.match(html, /manifest\.webmanifest/);
-  assert.match(html, /favicon\.ico\?v=20260814/);
+  assert.match(html, /<link rel="shortcut icon" href="\/icons\/icon-192\.png\?v=20260814-tab"/);
+  assert.doesNotMatch(html, /rel="(?:shortcut )?icon" href="\/favicon\.ico/);
   assert.doesNotMatch(html, /\/Users\/|\.vinext\/fonts/);
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|codex-preview/);
+});
+
+test("tab favicon points to a decodable PNG", async () => {
+  const icon = await readFile(new URL("../public/icons/icon-192.png", import.meta.url));
+
+  assert.deepEqual(icon.subarray(0, 8), Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]));
+  assert.equal(icon.readUInt32BE(16), 192);
+  assert.equal(icon.readUInt32BE(20), 192);
 });
 
 test("one range toggle controls both performance and trade records", async () => {
