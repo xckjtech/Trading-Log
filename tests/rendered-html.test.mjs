@@ -34,6 +34,8 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
+  const head = html.match(/<head>([\s\S]*?)<\/head>/i)?.[1] ?? "";
+  const body = html.match(/<body>([\s\S]*?)<\/body>/i)?.[1] ?? "";
   assert.match(html, /<title>Joe's Trading Log<\/title>/i);
   assert.match(html, /Joe(?:&apos;|&#x27;|&#39;|')s Trading Log/);
   assert.match(html, /资金概览/);
@@ -43,8 +45,8 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(html, /交易记录/);
   assert.match(html, /收益增长/);
   assert.match(html, /manifest\.webmanifest/);
-  assert.match(html, /<link rel="shortcut icon" href="\/icons\/icon-192\.png\?v=20260814-tab"/);
-  assert.doesNotMatch(html, /rel="(?:shortcut )?icon" href="\/favicon\.ico/);
+  assert.match(head, /<link rel="icon" href="\/icons\/icon-192\.png\?v=20260814-head"/);
+  assert.doesNotMatch(body, /rel="(?:shortcut )?icon"/);
   assert.doesNotMatch(html, /\/Users\/|\.vinext\/fonts/);
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|codex-preview/);
 });
