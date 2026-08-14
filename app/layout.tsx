@@ -10,13 +10,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const origin = host ? `${protocol}://${host}` : "https://hype-journal.example";
   const title = "Joe's Trading Log";
   const description = "为 HYPE 和 DOGE 现货多单设计的手机端交易记录与盈亏统计工具。";
+  const favicon = "/favicon.ico?v=20260814";
   return {
     title,
     description,
     icons: {
-      shortcut: "/favicon.ico",
+      shortcut: favicon,
       icon: [
-        { url: "/favicon.ico" },
+        { url: favicon },
         { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
         { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
       ],

@@ -43,7 +43,7 @@ test("server-renders the Trading Log shell", async () => {
   assert.match(html, /交易记录/);
   assert.match(html, /收益增长/);
   assert.match(html, /manifest\.webmanifest/);
-  assert.match(html, /favicon\.ico/);
+  assert.match(html, /favicon\.ico\?v=20260814/);
   assert.doesNotMatch(html, /\/Users\/|\.vinext\/fonts/);
   assert.doesNotMatch(html, /Your site is taking shape|Building your site|codex-preview/);
 });
