@@ -226,6 +226,7 @@ button { -webkit-tap-highlight-color: transparent; }
   .trade-foot { padding-inline: 14px; }
   .add-button { width: calc(100% - 32px); }
   .trade-form { padding-inline: 17px; }
+  .input-wrap input, .symbol-select { font-size: 16px; }
 }
 
 @media (max-width: 340px) {

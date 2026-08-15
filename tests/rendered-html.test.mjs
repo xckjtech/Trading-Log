@@ -67,6 +67,13 @@ test("installed PWA hides the root scrollbar without disabling scrolling", async
   assert.match(styles, /html::-webkit-scrollbar,\s*body::-webkit-scrollbar\s*\{\s*display:\s*none;/);
 });
 
+test("mobile trade form controls prevent iOS focus zoom", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+  const mobileStyles = styles.match(/@media \(max-width: 430px\) \{([\s\S]*?)\n\}/)?.[1] ?? "";
+
+  assert.match(mobileStyles, /\.input-wrap input,\s*\.symbol-select\s*\{\s*font-size:\s*16px;/);
+});
+
 test("one range toggle controls both performance and trade records", async () => {
   const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
   const toggles = journal.match(/className="filter-toggle"/g) ?? [];
