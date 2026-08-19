@@ -87,15 +87,15 @@ test("one range toggle controls both performance and trade records", async () =>
   assert.doesNotMatch(journal, /<h2>\{summaryScope\}表现<\/h2>/);
 });
 
-test("trade cards use a two-row hierarchy with a status accent", async () => {
+test("trade cards use a two-row hierarchy without an edge accent", async () => {
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
   assert.match(styles, /grid-template-areas:\s*"primary pnl" "secondary pct" "note note"/);
-  assert.match(styles, /\.trade-card::before/);
-  assert.match(styles, /\.win-trade-card::before/);
-  assert.match(styles, /\.loss-trade-card::before/);
   assert.match(styles, /\.trade-pnl-value\s*\{[^}]*font:\s*700 20px/);
   assert.match(styles, /\.delete-trade-button/);
+  assert.doesNotMatch(styles, /\.trade-card::before/);
+  assert.doesNotMatch(styles, /win-trade-card/);
+  assert.doesNotMatch(styles, /loss-trade-card/);
 });
 
 test("open positions follow the performance summary without an oversized gap", async () => {

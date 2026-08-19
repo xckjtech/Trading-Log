@@ -569,10 +569,9 @@ export default function TradeJournal({
     const cost = trade.quantity * trade.entryPrice;
     const returnPct = cost > 0 ? (trade.netPnl / cost) * 100 : 0;
     const pnlTone = isOpen ? "open-position" : trade.netPnl >= 0 ? "positive" : "negative";
-    const accent = isOpen ? "open" : trade.netPnl >= 0 ? "win" : "loss";
 
     return (
-      <article className={`trade-card ${accent}-trade-card`} key={trade.id}>
+      <article className={`trade-card ${isOpen ? "open-trade-card" : ""}`} key={trade.id}>
         <div className="trade-main">
           <div className="trade-primary">
             <span className={`symbol-pill symbol-${symbol.toLowerCase()}`}>{symbol}</span>
