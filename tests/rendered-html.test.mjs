@@ -233,7 +233,8 @@ test("owner edit API persists open and completed corrections safely", async (con
 test("open position cards distinguish the buy action from holding status", async () => {
   const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
 
-  assert.match(journal, /\{isOpen \? "买入" : "做多"\}/);
+  assert.match(journal, /\{isOpen && <span className="side-pill open">买入<\/span>\}/);
+  assert.doesNotMatch(journal, /做多/);
   assert.match(journal, /\{isOpen \? "持仓中" : money\(trade\.netPnl, true\)\}/);
   assert.doesNotMatch(journal, /\{isOpen \? "等待卖出"/);
 });

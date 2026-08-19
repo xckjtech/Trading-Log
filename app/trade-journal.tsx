@@ -553,7 +553,7 @@ export default function TradeJournal({
           <div className="trade-identity">
             <div className="trade-topline">
               <span className="symbol-pill">{tradeSymbol(trade)}</span>
-              <span className={`side-pill ${isOpen ? "open" : "long"}`}>{isOpen ? "买入" : "做多"}</span>
+              {isOpen && <span className="side-pill open">买入</span>}
             </div>
             <strong className="trade-route">
               <span>${compact(trade.entryPrice)}</span><i>→</i><span>{isOpen ? "—" : `$${compact(trade.exitPrice)}`}</span>
