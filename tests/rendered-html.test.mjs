@@ -87,6 +87,17 @@ test("one range toggle controls both performance and trade records", async () =>
   assert.doesNotMatch(journal, /<h2>\{summaryScope\}表现<\/h2>/);
 });
 
+test("trade cards use a two-row hierarchy with a status accent", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /grid-template-areas:\s*"primary pnl" "secondary pct" "note note"/);
+  assert.match(styles, /\.trade-card::before/);
+  assert.match(styles, /\.win-trade-card::before/);
+  assert.match(styles, /\.loss-trade-card::before/);
+  assert.match(styles, /\.trade-pnl-value\s*\{[^}]*font:\s*700 20px/);
+  assert.match(styles, /\.delete-trade-button/);
+});
+
 test("open positions follow the performance summary without an oversized gap", async () => {
   const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
 
@@ -230,11 +241,22 @@ test("owner edit API persists open and completed corrections safely", async (con
 
 });
 
-test("open position cards distinguish the buy action from holding status", async () => {
+test("open position cards distinguish holding status from completed pnl", async () => {
   const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
 
-  assert.match(journal, /\{isOpen && <span className="side-pill open">买入<\/span>\}/);
-  assert.doesNotMatch(journal, /做多/);
   assert.match(journal, /\{isOpen \? "持仓中" : money\(trade\.netPnl, true\)\}/);
-  assert.doesNotMatch(journal, /\{isOpen \? "等待卖出"/);
+  assert.doesNotMatch(journal, /做多/);
+  assert.doesNotMatch(journal, /side-pill open">买入/);
+  assert.doesNotMatch(journal, /等待卖出/);
+});
+
+test("completed trade cards lead with pnl and drop placeholder status copy", async () => {
+  const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
+
+  assert.match(journal, /className=\{`trade-pnl-value \$\{pnlTone\}`\}/);
+  assert.match(journal, /className=\{`trade-return \$\{pnlTone\}`\}/);
+  assert.match(journal, /percent\(returnPct\)/);
+  assert.match(journal, /formatTradeSpan\(trade\)/);
+  assert.doesNotMatch(journal, /交易已完成/);
+  assert.doesNotMatch(journal, /买入记录已保存/);
 });
