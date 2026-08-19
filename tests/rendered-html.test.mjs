@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
+import { unstable_dev } from "wrangler";
 
 async function request(pathname = "/", init = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -128,6 +129,105 @@ test("open positions cannot be deleted", async () => {
   assert.match(ownerRoute, /existing\.status === "open"/);
   assert.match(ownerRoute, /持仓中的交易不能删除/);
   assert.match(ownerRoute, /eq\(trades\.status, "closed"\)/);
+});
+
+test("owners can edit open and completed trade records", async () => {
+  const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
+  const ownerRoute = await readFile(new URL("../app/owner/api/trades/route.ts", import.meta.url), "utf8");
+
+  assert.match(journal, /aria-label="修改交易" onClick=\{\(\) => openEditForm\(trade\)\}>修改<\/button>/);
+  assert.match(journal, /action=edit/);
+  assert.match(journal, /editingTrade\.status === "closed"/);
+  assert.match(ownerRoute, /searchParams\.get\("action"\) === "edit"/);
+  assert.match(ownerRoute, /existing\.status === "open"/);
+  assert.match(ownerRoute, /eq\(trades\.status, "closed"\)/);
+});
+
+test("owner edit API persists open and completed corrections safely", async (context) => {
+  const ownerEmail = "owner@example.com";
+  const worker = await unstable_dev("dist/server/index.js", {
+    config: "wrangler.bigmagic.jsonc",
+    local: true,
+    persist: false,
+    vars: { TRADING_LOG_OWNER_EMAIL: ownerEmail },
+    logLevel: "error",
+    experimental: { disableExperimentalWarning: true, disableDevRegistry: true, watch: false },
+  });
+  context.after(() => worker.stop());
+  const ownerHeaders = {
+    accept: "application/json",
+    "content-type": "application/json",
+    "cf-access-authenticated-user-email": ownerEmail,
+  };
+  const apiRequest = (pathname, method, body, headers = ownerHeaders) => worker.fetch(
+    `http://localhost${pathname}`,
+    { method, headers, body: body === undefined ? undefined : JSON.stringify(body) },
+  );
+  const patch = (id, body, headers = ownerHeaders, action = "edit") => apiRequest(
+    `/owner/api/trades?id=${id}&action=${action}`,
+    "PATCH",
+    body,
+    headers,
+  );
+
+  const unauthenticated = await patch(1, {}, { accept: "application/json", "content-type": "application/json" });
+  assert.equal(unauthenticated.status, 403);
+
+  const initialized = await patch(999, {});
+  assert.equal(initialized.status, 404);
+  const openCreated = await apiRequest("/owner/api/trades", "POST", {
+    tradeDate: "2026-08-10", symbol: "HYPE", entryPrice: 10, quantity: 2, entryFee: 0.01,
+  });
+  assert.equal(openCreated.status, 201);
+  const openId = (await openCreated.json()).trade.id;
+  const closedCreated = await apiRequest("/owner/api/trades", "POST", {
+    tradeDate: "2026-08-11", symbol: "DOGE", entryPrice: 2, quantity: 10, entryFee: 0.1,
+  });
+  assert.equal(closedCreated.status, 201);
+  const closedId = (await closedCreated.json()).trade.id;
+  const closed = await apiRequest(`/owner/api/trades?id=${closedId}`, "PATCH", {
+    exitDate: "2026-08-12", exitPrice: 3, exitFee: 0.5,
+  });
+  assert.equal(closed.status, 200);
+
+  const openResponse = await patch(openId, {
+    tradeDate: "2026-08-09", symbol: "DOGE", entryPrice: 12, quantity: 3, entryFee: 0.02,
+    exitDate: "", exitPrice: "", exitFee: "",
+  });
+  assert.equal(openResponse.status, 200);
+
+  const closedResponse = await patch(closedId, {
+    tradeDate: "2026-08-11", symbol: "HYPE", entryPrice: 4, quantity: 5, entryFee: 0.1,
+    exitDate: "2026-08-13", exitPrice: 6, exitFee: 0.25,
+  });
+  assert.equal(closedResponse.status, 200);
+  const readback = await worker.fetch("http://localhost/api/trades", { headers: { accept: "application/json" } });
+  assert.equal(readback.status, 200);
+  const persistedTrades = (await readback.json()).trades;
+  const openRow = persistedTrades.find((trade) => trade.id === openId);
+  assert.deepEqual(
+    { symbol: openRow.symbol, tradeDate: openRow.tradeDate, entryPrice: openRow.entryPrice, quantity: openRow.quantity, status: openRow.status },
+    { symbol: "DOGE", tradeDate: "2026-08-09", entryPrice: 12, quantity: 3, status: "open" },
+  );
+  const closedRow = persistedTrades.find((trade) => trade.id === closedId);
+  assert.deepEqual(
+    { symbol: closedRow.symbol, grossPnl: closedRow.grossPnl, netPnl: closedRow.netPnl },
+    { symbol: "HYPE", grossPnl: 10, netPnl: 9.35 },
+  );
+
+  const impossibleDate = await patch(closedId, {
+    tradeDate: "2026-02-31", symbol: "HYPE", entryPrice: 4, quantity: 5, entryFee: 0.1,
+    exitDate: "2026-03-01", exitPrice: 6, exitFee: 0.25,
+  });
+  assert.equal(impossibleDate.status, 400);
+  assert.match((await impossibleDate.json()).error, /交易日期格式不正确/);
+
+  const overflow = await patch(closedId, {
+    tradeDate: "2026-08-11", symbol: "HYPE", entryPrice: 1e308, quantity: 1e308, entryFee: 0,
+    exitDate: "2026-08-13", exitPrice: 1e308, exitFee: 0,
+  });
+  assert.equal(overflow.status, 400);
+
 });
 
 test("open position cards distinguish the buy action from holding status", async () => {

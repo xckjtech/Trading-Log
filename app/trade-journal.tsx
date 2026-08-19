@@ -34,6 +34,8 @@ type CloseDraft = {
   exitFee: string;
 };
 
+type EditDraft = Draft & CloseDraft;
+
 type GrowthPoint = {
   date: string;
   daily: number;
@@ -61,6 +63,17 @@ const emptyCloseDraft = (): CloseDraft => ({
   exitDate: today(),
   exitPrice: "",
   exitFee: "",
+});
+
+const editDraftFromTrade = (trade: Trade): EditDraft => ({
+  tradeDate: trade.tradeDate,
+  symbol: tradeSymbol(trade),
+  entryPrice: String(trade.entryPrice),
+  quantity: String(trade.quantity),
+  entryFee: String(trade.entryFee),
+  exitDate: trade.exitDate ?? today(),
+  exitPrice: trade.status === "closed" ? String(trade.exitPrice) : "",
+  exitFee: trade.status === "closed" ? String(trade.exitFee) : "",
 });
 
 const money = (value: number, signed = false) =>
@@ -300,6 +313,8 @@ export default function TradeJournal({
   const [closeDraft, setCloseDraft] = useState<CloseDraft>(emptyCloseDraft);
   const [showForm, setShowForm] = useState(false);
   const [closingTrade, setClosingTrade] = useState<Trade | null>(null);
+  const [editingTrade, setEditingTrade] = useState<Trade | null>(null);
+  const [editDraft, setEditDraft] = useState<EditDraft | null>(null);
   const [filter, setFilter] = useState<"today" | "all">("today");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -351,13 +366,15 @@ export default function TradeJournal({
   }, [canWrite, ownerSessionHref]);
 
   useEffect(() => {
-    if (!showForm && !closingTrade) return;
+    if (!showForm && !closingTrade && !editingTrade) return;
 
     const previousOverflow = document.body.style.overflow;
     const closeDrawer = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
       setShowForm(false);
       setClosingTrade(null);
+      setEditingTrade(null);
+      setEditDraft(null);
     };
 
     document.body.style.overflow = "hidden";
@@ -366,7 +383,7 @@ export default function TradeJournal({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", closeDrawer);
     };
-  }, [showForm, closingTrade]);
+  }, [showForm, closingTrade, editingTrade]);
 
   const openTrades = useMemo(
     () => trades.filter((trade) => trade.status === "open"),
@@ -457,6 +474,39 @@ export default function TradeJournal({
     setError("");
   }
 
+  function openEditForm(trade: Trade) {
+    setEditingTrade(trade);
+    setEditDraft(editDraftFromTrade(trade));
+    setError("");
+  }
+
+  async function editTrade(event: FormEvent) {
+    event.preventDefault();
+    if (!editingTrade || !editDraft) return;
+    setSaving(true);
+    setError("");
+    try {
+      const response = await fetch(`/owner/api/trades?id=${editingTrade.id}&action=edit`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(editDraft),
+      });
+      const payload = (await response.json()) as { trade?: Trade; error?: string };
+      if (!response.ok || !payload.trade) {
+        throw new Error(payload.error || "保存失败");
+      }
+      setTrades((current) => current
+        .map((trade) => trade.id === payload.trade!.id ? payload.trade! : trade)
+        .sort((tradeA, tradeB) => tradeB.tradeDate.localeCompare(tradeA.tradeDate) || tradeB.id - tradeA.id));
+      setEditingTrade(null);
+      setEditDraft(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function closeTrade(event: FormEvent) {
     event.preventDefault();
     if (!closingTrade) return;
@@ -520,6 +570,7 @@ export default function TradeJournal({
           <p>{isOpen ? "买入记录已保存" : trade.note || "交易已完成"}</p>
           {ownerReady && (
             <div className="trade-foot-actions">
+              <button aria-label="修改交易" onClick={() => openEditForm(trade)}>修改</button>
               {isOpen && <button className="close-trade-button" onClick={() => openCloseForm(trade)}>记录卖出</button>}
               {!isOpen && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
             </div>
@@ -691,6 +742,60 @@ export default function TradeJournal({
             </div>
             {error && <div className="form-error">{error}</div>}
             <button className="save-button" disabled={saving}>{saving ? "正在保存…" : "完成这笔交易"}</button>
+          </form>
+        </div>
+      )}
+
+      {ownerReady && editingTrade && editDraft && (
+        <div className="modal-backdrop" role="dialog" aria-modal="true" aria-label="修改交易">
+          <button type="button" className="modal-backdrop-dismiss" aria-label="关闭修改交易窗口" onClick={() => { setEditingTrade(null); setEditDraft(null); }} />
+          <form className="trade-form" onSubmit={editTrade}>
+            <div className="form-handle" aria-hidden="true" />
+
+            <div className="close-position-summary">
+              <div className="trade-topline">
+                <span className="symbol-pill">{editDraft.symbol}</span>
+                <span className={`side-pill ${editingTrade.status === "open" ? "open" : "long"}`}>{editingTrade.status === "open" ? "持仓中" : "已完成"}</span>
+              </div>
+              <strong>修改交易</strong>
+              <span>修改后会自动更新交易记录{editingTrade.status === "closed" ? "和盈亏" : ""}</span>
+            </div>
+
+            <div className="form-block">
+              <div className="form-meta-grid">
+                <label>
+                  <span className="field-label">交易币种</span>
+                  <div className="input-wrap symbol-select-wrap">
+                    <select aria-label="修改交易币种" className="symbol-select" value={editDraft.symbol} onChange={(e) => setEditDraft({ ...editDraft, symbol: e.target.value as Draft["symbol"] })}>
+                      <option value="HYPE">HYPE</option>
+                      <option value="DOGE">DOGE</option>
+                    </select>
+                  </div>
+                </label>
+                <label><span className="field-label">买入日期</span><div className="input-wrap"><input type="date" required max={editingTrade.status === "closed" ? editDraft.exitDate : undefined} value={editDraft.tradeDate} onChange={(e) => setEditDraft({ ...editDraft, tradeDate: e.target.value })} /></div></label>
+              </div>
+            </div>
+
+            <div className="form-block">
+              <div className="field-grid">
+                <label><span>买入价格</span><div className="input-wrap"><input inputMode="decimal" required value={editDraft.entryPrice} onChange={(e) => setEditDraft({ ...editDraft, entryPrice: e.target.value })} /><b>USDT</b></div></label>
+                <label><span>数量</span><div className="input-wrap"><input inputMode="decimal" required value={editDraft.quantity} onChange={(e) => setEditDraft({ ...editDraft, quantity: e.target.value })} /><b>{editDraft.symbol}</b></div></label>
+                <label><span>买入手续费</span><div className="input-wrap"><input inputMode="decimal" value={editDraft.entryFee} onChange={(e) => setEditDraft({ ...editDraft, entryFee: e.target.value })} /><b>{editDraft.symbol}</b></div></label>
+              </div>
+            </div>
+
+            {editingTrade.status === "closed" && (
+              <div className="form-block">
+                <div className="field-grid close-field-grid">
+                  <label><span>卖出日期</span><div className="input-wrap"><input type="date" required min={editDraft.tradeDate} value={editDraft.exitDate} onChange={(e) => setEditDraft({ ...editDraft, exitDate: e.target.value })} /></div></label>
+                  <label><span>卖出价格</span><div className="input-wrap"><input inputMode="decimal" required value={editDraft.exitPrice} onChange={(e) => setEditDraft({ ...editDraft, exitPrice: e.target.value })} /><b>USDT</b></div></label>
+                  <label><span>卖出手续费</span><div className="input-wrap"><input inputMode="decimal" value={editDraft.exitFee} onChange={(e) => setEditDraft({ ...editDraft, exitFee: e.target.value })} /><b>USDT</b></div></label>
+                </div>
+              </div>
+            )}
+
+            {error && <div className="form-error">{error}</div>}
+            <button className="save-button entry-save-button" disabled={saving}>{saving ? "正在保存…" : "保存修改"}</button>
           </form>
         </div>
       )}
