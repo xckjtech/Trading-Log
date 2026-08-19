@@ -85,6 +85,25 @@ const money = (value: number, signed = false) =>
 const compact = (value: number) =>
   value.toLocaleString("en-US", { maximumFractionDigits: 6 });
 
+const percent = (value: number) =>
+  `${value > 0 ? "+" : value < 0 ? "−" : ""}${Math.abs(value).toFixed(2)}%`;
+
+const shortDate = (value: string) => value.slice(5);
+
+const formatTradeSpan = (trade: Trade) => {
+  const start = trade.tradeDate;
+  if (trade.status === "open" || !trade.exitDate || trade.exitDate === start) {
+    return start.slice(0, 4) === String(new Date().getFullYear()) ? shortDate(start) : start;
+  }
+
+  const end = trade.exitDate;
+  if (start.slice(0, 4) === end.slice(0, 4)) {
+    return `${shortDate(start)} → ${shortDate(end)}`;
+  }
+
+  return `${start} → ${end}`;
+};
+
 const tradeSymbol = (trade: Trade) => trade.symbol ?? "HYPE";
 
 function previewClosePnl(trade: Trade, draft: CloseDraft) {
@@ -544,35 +563,39 @@ export default function TradeJournal({
 
   function renderTradeCard(trade: Trade) {
     const isOpen = trade.status === "open";
+    const symbol = tradeSymbol(trade);
     const entryFee = trade.entryFee * trade.entryPrice;
-    const completedDate = trade.exitDate ?? trade.tradeDate;
+    const totalFee = isOpen ? entryFee : entryFee + trade.exitFee;
+    const cost = trade.quantity * trade.entryPrice;
+    const returnPct = cost > 0 ? (trade.netPnl / cost) * 100 : 0;
+    const pnlTone = isOpen ? "open-position" : trade.netPnl >= 0 ? "positive" : "negative";
+    const accent = isOpen ? "open" : trade.netPnl >= 0 ? "win" : "loss";
 
     return (
-      <article className={`trade-card ${isOpen ? "open-trade-card" : ""}`} key={trade.id}>
+      <article className={`trade-card ${accent}-trade-card`} key={trade.id}>
         <div className="trade-main">
-          <div className="trade-identity">
-            <div className="trade-topline">
-              <span className="symbol-pill">{tradeSymbol(trade)}</span>
-              {isOpen && <span className="side-pill open">买入</span>}
-            </div>
+          <div className="trade-primary">
+            <span className={`symbol-pill symbol-${symbol.toLowerCase()}`}>{symbol}</span>
             <strong className="trade-route">
               <span>${compact(trade.entryPrice)}</span><i>→</i><span>{isOpen ? "—" : `$${compact(trade.exitPrice)}`}</span>
             </strong>
-            <span className="trade-quantity">{compact(trade.quantity)} {tradeSymbol(trade)}</span>
           </div>
-          <div className={`trade-pnl ${isOpen ? "open-position" : trade.netPnl >= 0 ? "positive" : "negative"}`}>
-            <span className="trade-date">{isOpen ? trade.tradeDate : `${trade.tradeDate} → ${completedDate}`}</span>
-            <strong>{isOpen ? "持仓中" : money(trade.netPnl, true)}</strong>
-            <span>{isOpen ? "买入手续费" : "手续费"} {money(isOpen ? entryFee : entryFee + trade.exitFee)}</span>
+          <strong className={`trade-pnl-value ${pnlTone}`}>{isOpen ? "持仓中" : money(trade.netPnl, true)}</strong>
+          <div className="trade-secondary">
+            <span className="trade-quantity">{compact(trade.quantity)} {symbol}</span>
+            <span className="trade-meta-dot" aria-hidden="true">·</span>
+            <span className="trade-date">{formatTradeSpan(trade)}</span>
           </div>
+          {!isOpen && <span className={`trade-return ${pnlTone}`}>{percent(returnPct)}</span>}
+          {!isOpen && trade.note ? <p className="trade-note">{trade.note}</p> : null}
         </div>
         <div className="trade-foot">
-          <p>{isOpen ? "买入记录已保存" : trade.note || "交易已完成"}</p>
+          <p>{isOpen ? "买入手续费" : "手续费"} {money(totalFee)}</p>
           {ownerReady && (
             <div className="trade-foot-actions">
               <button aria-label="修改交易" onClick={() => openEditForm(trade)}>修改</button>
               {isOpen && <button className="close-trade-button" onClick={() => openCloseForm(trade)}>记录卖出</button>}
-              {!isOpen && <button aria-label="删除交易" onClick={() => void deleteTrade(trade.id)}>删除</button>}
+              {!isOpen && <button aria-label="删除交易" className="delete-trade-button" onClick={() => void deleteTrade(trade.id)}>删除</button>}
             </div>
           )}
         </div>
