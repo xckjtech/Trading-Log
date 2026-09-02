@@ -246,7 +246,8 @@ test("open position cards distinguish holding status from completed pnl", async 
   const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
 
   assert.match(journal, /\{isOpen \? "持仓中" : money\(trade\.netPnl, true\)\}/);
-  assert.match(journal, /\{isOpen && <button className="close-trade-button" onClick=\{\(\) => openCloseForm\(trade\)\}>卖出<\/button>\}/);
+  assert.match(journal, /\{isOpen && <button className="close-trade-button primary" onClick=\{\(\) => openCloseForm\(trade\)\}>卖出<\/button>\}/);
+  assert.match(journal, /formatHoldingDays\(trade\.tradeDate\)/);
   assert.doesNotMatch(journal, /做多/);
   assert.doesNotMatch(journal, /side-pill open">买入/);
   assert.doesNotMatch(journal, /等待卖出/);
@@ -269,5 +270,6 @@ test("open position cards style with sky blue theme and pulse indicator", async 
   assert.match(styles, /\.open-trade-card\s*\{[^}]*border-left:\s*3px solid/);
   assert.match(styles, /\.trade-pnl-value\.open-position::before\s*\{[^}]*animation:\s*pulse-dot/);
   assert.match(styles, /@keyframes pulse-dot/);
+  assert.match(styles, /\.trade-holding-days/);
 });
 

@@ -90,6 +90,15 @@ const percent = (value: number) =>
 
 const shortDate = (value: string) => value.slice(5);
 
+const formatHoldingDays = (tradeDate: string) => {
+  const [year, month, day] = tradeDate.split("-").map(Number);
+  const startUtc = Date.UTC(year, month - 1, day);
+  const now = new Date();
+  const todayUtc = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const diffDays = Math.max(1, Math.round((todayUtc - startUtc) / 86400000) + 1);
+  return `持仓第 ${diffDays} 天`;
+};
+
 const formatTradeSpan = (trade: Trade) => {
   const start = trade.tradeDate;
   if (trade.status === "open" || !trade.exitDate || trade.exitDate === start) {
@@ -575,17 +584,32 @@ export default function TradeJournal({
         <div className="trade-main">
           <div className="trade-primary">
             <span className={`symbol-pill symbol-${symbol.toLowerCase()}`}>{symbol}</span>
-            <strong className="trade-route">
-              <span>${compact(trade.entryPrice)}</span><i>→</i><span>{isOpen ? "—" : `$${compact(trade.exitPrice)}`}</span>
-            </strong>
+            {isOpen ? (
+              <strong className="trade-route open-trade-route">
+                <span className="route-label">买入</span>
+                <span>${compact(trade.entryPrice)}</span>
+              </strong>
+            ) : (
+              <strong className="trade-route">
+                <span>${compact(trade.entryPrice)}</span><i>→</i><span>${compact(trade.exitPrice)}</span>
+              </strong>
+            )}
           </div>
           <strong className={`trade-pnl-value ${pnlTone}`}>{isOpen ? "持仓中" : money(trade.netPnl, true)}</strong>
           <div className="trade-secondary">
             <span className="trade-quantity">{compact(trade.quantity)} {symbol}</span>
             <span className="trade-meta-dot" aria-hidden="true">·</span>
-            <span className="trade-date">{formatTradeSpan(trade)}</span>
+            {isOpen ? (
+              <span className="trade-cost">投入 ${compact(cost)}</span>
+            ) : (
+              <span className="trade-date">{formatTradeSpan(trade)}</span>
+            )}
           </div>
-          {!isOpen && <span className={`trade-return ${pnlTone}`}>{percent(returnPct)}</span>}
+          {isOpen ? (
+            <span className="trade-return trade-holding-days">{formatHoldingDays(trade.tradeDate)}</span>
+          ) : (
+            <span className={`trade-return ${pnlTone}`}>{percent(returnPct)}</span>
+          )}
           {!isOpen && trade.note ? <p className="trade-note">{trade.note}</p> : null}
         </div>
         <div className="trade-foot">
@@ -593,7 +617,7 @@ export default function TradeJournal({
           {ownerReady && (
             <div className="trade-foot-actions">
               <button aria-label="修改交易" onClick={() => openEditForm(trade)}>修改</button>
-              {isOpen && <button className="close-trade-button" onClick={() => openCloseForm(trade)}>卖出</button>}
+              {isOpen && <button className="close-trade-button primary" onClick={() => openCloseForm(trade)}>卖出</button>}
               <button aria-label="删除交易" className="delete-trade-button" onClick={() => void deleteTrade(trade.id)}>删除</button>
             </div>
           )}
