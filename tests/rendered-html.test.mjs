@@ -246,6 +246,7 @@ test("open position cards distinguish holding status from completed pnl", async 
   const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
 
   assert.match(journal, /\{isOpen \? "持仓中" : money\(trade\.netPnl, true\)\}/);
+  assert.match(journal, /\{isOpen && <button className="close-trade-button" onClick=\{\(\) => openCloseForm\(trade\)\}>卖出<\/button>\}/);
   assert.doesNotMatch(journal, /做多/);
   assert.doesNotMatch(journal, /side-pill open">买入/);
   assert.doesNotMatch(journal, /等待卖出/);
