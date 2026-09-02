@@ -260,3 +260,12 @@ test("completed trade cards lead with pnl and drop placeholder status copy", asy
   assert.doesNotMatch(journal, /交易已完成/);
   assert.doesNotMatch(journal, /买入记录已保存/);
 });
+
+test("open position cards style with sky blue theme and pulse indicator", async () => {
+  const styles = await readFile(new URL("../app/globals.css", import.meta.url), "utf8");
+
+  assert.match(styles, /\.open-trade-card\s*\{[^}]*border-left:\s*3px solid/);
+  assert.match(styles, /\.trade-pnl-value\.open-position::before\s*\{[^}]*animation:\s*pulse-dot/);
+  assert.match(styles, /@keyframes pulse-dot/);
+});
+
