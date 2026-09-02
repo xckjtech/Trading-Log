@@ -160,8 +160,7 @@ export async function DELETE(request: Request) {
   const db = await getDb();
   const [existing] = await db.select({ status: trades.status }).from(trades).where(and(eq(trades.id, id), eq(trades.userId, user!.userId))).limit(1);
   if (!existing) return Response.json({ error: "找不到这笔交易" }, { status: 404 });
-  if (existing.status === "open") return Response.json({ error: "持仓中的交易不能删除" }, { status: 409 });
 
-  await db.delete(trades).where(and(eq(trades.id, id), eq(trades.userId, user!.userId), eq(trades.status, "closed")));
+  await db.delete(trades).where(and(eq(trades.id, id), eq(trades.userId, user!.userId)));
   return Response.json({ ok: true });
 }

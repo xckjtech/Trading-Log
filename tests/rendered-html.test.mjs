@@ -132,14 +132,13 @@ test("trade route exports keep public access read-only", async () => {
   assert.match(ownerRoute, /export async function DELETE\s*\(/);
 });
 
-test("open positions cannot be deleted", async () => {
+test("trades can be deleted by owner", async () => {
   const journal = await readFile(new URL("../app/trade-journal.tsx", import.meta.url), "utf8");
   const ownerRoute = await readFile(new URL("../app/owner/api/trades/route.ts", import.meta.url), "utf8");
 
-  assert.match(journal, /\{!isOpen && <button aria-label="删除交易"/);
-  assert.match(ownerRoute, /existing\.status === "open"/);
-  assert.match(ownerRoute, /持仓中的交易不能删除/);
-  assert.match(ownerRoute, /eq\(trades\.status, "closed"\)/);
+  assert.match(journal, /<button aria-label="删除交易" className="delete-trade-button"/);
+  assert.match(ownerRoute, /export async function DELETE/);
+  assert.match(ownerRoute, /db\.delete\(trades\)/);
 });
 
 test("owners can edit open and completed trade records", async () => {
@@ -239,6 +238,8 @@ test("owner edit API persists open and completed corrections safely", async (con
   });
   assert.equal(overflow.status, 400);
 
+  const deleteOpen = await apiRequest(`/owner/api/trades?id=${openId}`, "DELETE");
+  assert.equal(deleteOpen.status, 200);
 });
 
 test("open position cards distinguish holding status from completed pnl", async () => {
